@@ -31,6 +31,20 @@ The app also includes:
 - `components/ui/` - shadcn/ui components
 - `lib/` - Utility functions and helpers
 - `hooks/` - Custom React hooks
+- `blocks/` - Reusable block components
+  - Each block has its own folder with:
+    - `schema.ts` - Zod validation schema
+    - `types.ts` - TypeScript types
+    - `editor.tsx` - Dashboard settings panel
+    - `preview.tsx` - Builder preview component
+    - `renderer.tsx` - Public website renderer
+    - `index.ts` - Main export file
+    - `styles.css` - Optional block-specific styles
+- `templates/` - Pre-made page templates
+  - Each template has its own folder with:
+    - `blocks.json` - Array of blocks with default params
+    - `index.ts` - Template metadata export
+    - `schema.ts` - Optional template configuration schema
 
 ### Tech Stack
 - **Next.js 15.4.6** (App Router) with Turbopack

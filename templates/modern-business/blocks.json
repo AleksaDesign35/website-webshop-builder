@@ -1,0 +1,29 @@
+[
+  {
+    "id": "hero-section",
+    "order": 0,
+    "params": {
+      "title": "Welcome to Our Business",
+      "subtitle": "We provide exceptional services to help your business grow",
+      "ctaText": "Get Started",
+      "ctaLink": "#contact",
+      "alignment": "center",
+      "backgroundColor": "#000000",
+      "textColor": "#ffffff",
+      "padding": {
+        "top": 100,
+        "bottom": 100,
+        "left": 20,
+        "right": 20
+      }
+    }
+  },
+  {
+    "id": "text-block",
+    "order": 1,
+    "params": {
+      "content": "About our company and services..."
+    }
+  }
+]
+

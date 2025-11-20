@@ -1,0 +1,58 @@
+import type { LucideIcon } from 'lucide-react';
+import type { ComponentType } from 'react';
+
+/**
+ * Base block definition interface
+ */
+export interface BlockDefinition {
+  /** Unique block identifier (kebab-case) */
+  id: string;
+  /** Display name */
+  name: string;
+  /** Category for grouping */
+  category: 'Text' | 'Media' | 'Layout' | 'Forms' | 'Navigation' | 'E-commerce';
+  /** Short description */
+  description: string;
+  /** Icon component from lucide-react */
+  icon: LucideIcon;
+  /** Whether this is a popular block */
+  popular?: boolean;
+  /** Zod schema for validation */
+  schema: unknown; // Will be typed as z.ZodObject in actual blocks
+  /** Editor component (dashboard settings) */
+  Editor: ComponentType<BlockEditorProps>;
+  /** Preview component (builder preview) */
+  Preview: ComponentType<BlockPreviewProps>;
+  /** Renderer component (public website) */
+  Renderer: ComponentType<BlockRendererProps>;
+}
+
+/**
+ * Props for Editor component
+ */
+export interface BlockEditorProps {
+  /** Current block parameters */
+  params: Record<string, unknown>;
+  /** Callback when parameters change */
+  onChange: (params: Record<string, unknown>) => void;
+}
+
+/**
+ * Props for Preview component
+ */
+export interface BlockPreviewProps {
+  /** Block parameters */
+  params: Record<string, unknown>;
+  /** Whether block is being edited */
+  isEditing?: boolean;
+}
+
+/**
+ * Props for Renderer component
+ */
+export interface BlockRendererProps {
+  /** Block parameters */
+  params: Record<string, unknown>;
+  /** Block ID (for tracking) */
+  blockId?: string;
+}
