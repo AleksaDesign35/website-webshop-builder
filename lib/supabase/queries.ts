@@ -1,4 +1,4 @@
-import { createServerClient } from './server';
+import { createServerClient, createAdminClient } from './server';
 import type { Database } from './types';
 
 type Tables = Database['public']['Tables'];
@@ -6,6 +6,7 @@ type Tables = Database['public']['Tables'];
 // Helper function to get current user ID from Clerk
 async function getCurrentUserId(clerkUserId: string) {
   const supabase = await createServerClient();
+  const adminSupabase = createAdminClient();
 
   // First, try to find existing user
   const { data: existingUser } = await supabase
@@ -18,8 +19,8 @@ async function getCurrentUserId(clerkUserId: string) {
     return existingUser.id;
   }
 
-  // If user doesn't exist, create them
-  const { data: newUser, error } = await supabase
+  // If user doesn't exist, create them using admin client (bypasses RLS)
+  const { data: newUser, error } = await adminSupabase
     .from('users')
     .insert({
       clerk_user_id: clerkUserId,

@@ -1,3 +1,6 @@
+// TEMPORARY: Clerk authentication disabled for development
+// TODO: Re-enable Clerk authentication when ready
+/*
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 
 // Define public routes that don't require authentication
@@ -14,6 +17,12 @@ export default clerkMiddleware(async (auth, request) => {
     await auth.protect();
   }
 });
+*/
+
+// Temporary: Allow all routes without authentication
+export default function middleware() {
+  // No authentication required for development
+}
 
 export const config = {
   matcher: [

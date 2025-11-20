@@ -3,6 +3,8 @@
 import { ArrowLeft, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { useSites } from '@/hooks/use-sites';
+import { useCreatePage } from '@/hooks/use-pages';
 import { NewPageModal } from '@/components/dashboard/new-page-modal';
 import { PageList } from '@/components/dashboard/page-list';
 import { Button } from '@/components/ui/button';
@@ -14,26 +16,36 @@ interface SiteDetailPageProps {
 export default function SiteDetailPage({ params }: SiteDetailPageProps) {
   const [siteId, setSiteId] = useState<string>('');
   const [showNewPageModal, setShowNewPageModal] = useState(false);
+  const { data: sites } = useSites();
+  const createPage = useCreatePage();
 
   // Resolve params
   useEffect(() => {
     params.then((p) => setSiteId(p.siteId));
   }, [params]);
 
-  // TODO: Fetch site data from Supabase
-  const site = {
-    id: siteId,
-    name: 'My Portfolio',
-    description: 'Personal portfolio website',
-  };
+  const site = sites?.find((s) => s.id === siteId);
 
-  const handleNewPage = (data: { name: string; description: string }) => {
-    // TODO: Create page in Supabase
-    console.log('Creating page:', data);
+  const handleNewPage = async (data: { name: string; description: string }) => {
+    try {
+      await createPage.mutateAsync({
+        siteId,
+        name: data.name,
+        description: data.description || null,
+        is_active: false,
+        display_order: 0,
+      });
+    } catch (error) {
+      console.error('Failed to create page:', error);
+    }
   };
 
   if (!siteId) {
     return <div>Loading...</div>;
+  }
+
+  if (!site) {
+    return <div>Site not found</div>;
   }
 
   return (

@@ -28,7 +28,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { usePages, useUpdatePage, useDeletePage, useReorderPages } from '@/hooks/use-pages';
 import { Button } from '@/components/ui/button';
 import {
   Table,
@@ -38,47 +38,13 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import type { Database } from '@/lib/supabase/types';
 
-interface Page {
-  id: string;
-  name: string;
-  description: string;
-  createdAt: string;
-  isActive: boolean;
-  order: number;
-}
+type Page = Database['public']['Tables']['pages']['Row'];
 
 interface PageListProps {
   siteId: string;
 }
-
-// TODO: Replace with real data from Supabase
-const mockPages: Page[] = [
-  {
-    id: '1',
-    name: 'Home',
-    description: 'Main landing page',
-    createdAt: '2025-01-15',
-    isActive: true,
-    order: 0,
-  },
-  {
-    id: '2',
-    name: 'About',
-    description: 'About us page',
-    createdAt: '2025-01-16',
-    isActive: false,
-    order: 1,
-  },
-  {
-    id: '3',
-    name: 'Contact',
-    description: 'Contact information',
-    createdAt: '2025-01-17',
-    isActive: false,
-    order: 2,
-  },
-];
 
 function SortablePageRow({
   page,
@@ -143,7 +109,7 @@ function SortablePageRow({
         {page.description || '-'}
       </TableCell>
       <TableCell className="text-muted-foreground">
-        {new Date(page.createdAt).toLocaleDateString('en-US')}
+        {new Date(page.created_at).toLocaleDateString('en-US')}
       </TableCell>
       <TableCell>
         <Button
@@ -186,13 +152,13 @@ function SortablePageRow({
       </TableCell>
       <TableCell>
         <Button
-          className={`h-8 w-8 ${page.isActive ? 'text-primary' : 'text-muted-foreground'}`}
+          className={`h-8 w-8 ${page.is_active ? 'text-primary' : 'text-muted-foreground'}`}
           onClick={(e) => {
             e.stopPropagation();
             onToggleActive(page.id);
           }}
           size="icon"
-          title={page.isActive ? 'Deactivate' : 'Activate'}
+          title={page.is_active ? 'Deactivate' : 'Activate'}
           variant="ghost"
         >
           <Rocket className="h-4 w-4" />
@@ -226,7 +192,10 @@ function SortablePageRow({
 }
 
 export function PageList({ siteId }: PageListProps) {
-  const [pages, setPages] = useState<Page[]>(mockPages);
+  const { data: pages = [], isLoading } = usePages(siteId);
+  const updatePage = useUpdatePage();
+  const deletePage = useDeletePage();
+  const reorderPages = useReorderPages();
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -235,39 +204,63 @@ export function PageList({ siteId }: PageListProps) {
     })
   );
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
 
-    if (over && active.id !== over.id) {
-      setPages((items) => {
-        const oldIndex = items.findIndex((item) => item.id === active.id);
-        const newIndex = items.findIndex((item) => item.id === over.id);
+    if (over && active.id !== over.id && pages) {
+      const oldIndex = pages.findIndex((item) => item.id === active.id);
+      const newIndex = pages.findIndex((item) => item.id === over.id);
 
-        const newItems = arrayMove(items, oldIndex, newIndex);
-        // Update order
-        newItems.forEach((item, index) => {
-          item.order = index;
-        });
-        return newItems;
-      });
+      const newPages = arrayMove(pages, oldIndex, newIndex);
+      const pageIds = newPages.map((p) => p.id);
+
+      try {
+        await reorderPages.mutateAsync({ siteId, pageIds });
+      } catch (error) {
+        console.error('Failed to reorder pages:', error);
+      }
     }
   };
 
-  const handleDelete = (pageId: string) => {
-    setPages(pages.filter((p) => p.id !== pageId));
+  const handleDelete = async (pageId: string) => {
+    if (confirm('Are you sure you want to delete this page?')) {
+      try {
+        await deletePage.mutateAsync({ siteId, pageId });
+      } catch (error) {
+        console.error('Failed to delete page:', error);
+      }
+    }
   };
 
-  const handleToggleActive = (pageId: string) => {
-    setPages(
-      pages.map((p) => (p.id === pageId ? { ...p, isActive: !p.isActive } : p))
-    );
+  const handleToggleActive = async (pageId: string) => {
+    const page = pages.find((p) => p.id === pageId);
+    if (page) {
+      try {
+        await updatePage.mutateAsync({
+          siteId,
+          pageId,
+          updates: { is_active: !page.is_active },
+        });
+      } catch (error) {
+        console.error('Failed to toggle page active status:', error);
+      }
+    }
   };
 
   const handleCopy = (pageId: string) => {
     console.log('Copy page:', pageId);
+    // TODO: Implement copy functionality
   };
 
-  const sortedPages = [...pages].sort((a, b) => a.order - b.order);
+  if (isLoading) {
+    return <div className="text-muted-foreground text-center py-8">Loading pages...</div>;
+  }
+
+  if (!pages || pages.length === 0) {
+    return <div className="text-muted-foreground text-center py-8">No pages yet. Create your first page!</div>;
+  }
+
+  const sortedPages = [...pages].sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
 
   return (
     <div className="rounded-lg border border-border bg-card">

@@ -29,11 +29,15 @@ import {
   Trash2,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useBlocks, useCreateBlock, useUpdateBlock, useDeleteBlock, useReorderBlocks } from '@/hooks/use-blocks';
 import { getBlock } from '@/blocks/index';
 import type { BlockDefinition } from '@/blocks/types';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { BlockPicker } from './block-picker';
+import type { Database } from '@/lib/supabase/types';
+
+type DbBlock = Database['public']['Tables']['blocks']['Row'];
 
 interface Block {
   id: string;
@@ -47,15 +51,15 @@ interface BlockEditorProps {
   pageId: string;
 }
 
-// TODO: Replace with real data from Supabase
-const mockBlocks: Block[] = [
-  {
-    id: '1',
-    blockId: 'hero-section',
-    params: {},
-    order: 0,
-  },
-];
+// Convert DB block to editor block format
+function dbBlockToBlock(dbBlock: DbBlock): Block {
+  return {
+    id: dbBlock.id,
+    blockId: dbBlock.block_id,
+    params: (dbBlock.params as Record<string, unknown>) || {},
+    order: dbBlock.display_order ?? 0,
+  };
+}
 
 function SortableBlockItem({
   block,
@@ -125,7 +129,14 @@ function SortableBlockItem({
 }
 
 export function BlockEditor({ siteId, pageId }: BlockEditorProps) {
-  const [blocks, setBlocks] = useState<Block[]>(mockBlocks);
+  const { data: dbBlocks = [], isLoading } = useBlocks(siteId, pageId);
+  const createBlock = useCreateBlock();
+  const updateBlock = useUpdateBlock();
+  const deleteBlock = useDeleteBlock();
+  const reorderBlocks = useReorderBlocks();
+
+  const blocks = dbBlocks.map(dbBlockToBlock);
+
   const [selectedBlock, setSelectedBlock] = useState<Block | null>(null);
   const [blockDefinition, setBlockDefinition] =
     useState<BlockDefinition | null>(null);
@@ -144,21 +155,21 @@ export function BlockEditor({ siteId, pageId }: BlockEditorProps) {
     })
   );
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
 
-    if (over && active.id !== over.id) {
-      setBlocks((items) => {
-        const oldIndex = items.findIndex((item) => item.id === active.id);
-        const newIndex = items.findIndex((item) => item.id === over.id);
+    if (over && active.id !== over.id && blocks.length > 0) {
+      const oldIndex = blocks.findIndex((item) => item.id === active.id);
+      const newIndex = blocks.findIndex((item) => item.id === over.id);
 
-        const newItems = arrayMove(items, oldIndex, newIndex);
-        // Update order
-        newItems.forEach((item, index) => {
-          item.order = index;
-        });
-        return newItems;
-      });
+      const newBlocks = arrayMove(blocks, oldIndex, newIndex);
+      const blockIds = newBlocks.map((b) => b.id);
+
+      try {
+        await reorderBlocks.mutateAsync({ siteId, pageId, blockIds });
+      } catch (error) {
+        console.error('Failed to reorder blocks:', error);
+      }
     }
   };
 
@@ -181,33 +192,55 @@ export function BlockEditor({ siteId, pageId }: BlockEditorProps) {
     }
   };
 
-  const handleAddBlock = (blockId: string) => {
-    const newBlock: Block = {
-      id: Date.now().toString(),
-      blockId,
-      params: {},
-      order: blocks.length,
-    };
-    setBlocks([...blocks, newBlock]);
-    // Auto-select the new block
-    handleBlockClick(newBlock);
-  };
-
-  const handleDeleteBlock = (blockId: string) => {
-    setBlocks(blocks.filter((b) => b.id !== blockId));
-    if (selectedBlock?.id === blockId) {
-      setSelectedBlock(null);
-      setBlockDefinition(null);
+  const handleAddBlock = async (blockId: string) => {
+    try {
+      const newDbBlock = await createBlock.mutateAsync({
+        siteId,
+        pageId,
+        page_id: pageId,
+        block_id: blockId,
+        params: {} as Record<string, unknown>,
+        display_order: blocks.length,
+      });
+      const newBlock = dbBlockToBlock(newDbBlock);
+      // Auto-select the new block
+      handleBlockClick(newBlock);
+    } catch (error) {
+      console.error('Failed to create block:', error);
     }
   };
 
-  const handleBlockUpdate = (
+  const handleDeleteBlock = async (blockId: string) => {
+    if (confirm('Are you sure you want to delete this block?')) {
+      try {
+        await deleteBlock.mutateAsync({ siteId, pageId, blockId });
+        if (selectedBlock?.id === blockId) {
+          setSelectedBlock(null);
+          setBlockDefinition(null);
+        }
+      } catch (error) {
+        console.error('Failed to delete block:', error);
+      }
+    }
+  };
+
+  const handleBlockUpdate = async (
     blockId: string,
     params: Record<string, unknown>
   ) => {
-    setBlocks(blocks.map((b) => (b.id === blockId ? { ...b, params } : b)));
-    if (selectedBlock?.id === blockId) {
-      setSelectedBlock({ ...selectedBlock, params });
+    try {
+      await updateBlock.mutateAsync({
+        siteId,
+        pageId,
+        blockId,
+        updates: { params },
+      });
+      // Update local state for immediate UI feedback
+      if (selectedBlock?.id === blockId) {
+        setSelectedBlock({ ...selectedBlock, params });
+      }
+    } catch (error) {
+      console.error('Failed to update block:', error);
     }
   };
 
