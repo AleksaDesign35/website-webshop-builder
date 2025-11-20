@@ -4,7 +4,7 @@ import { createBlock, getBlocks } from '@/lib/supabase/queries';
 
 export async function GET(request: Request) {
   try {
-    const clerkUserId = await getCurrentUserId();
+    await getCurrentUserId(); // Verify authentication
     const { searchParams } = new URL(request.url);
     const siteId = searchParams.get('siteId');
     const pageId = searchParams.get('pageId');
@@ -16,21 +16,21 @@ export async function GET(request: Request) {
       );
     }
 
-    const blocks = await getBlocks(clerkUserId, siteId, pageId);
+    const blocks = await getBlocks(siteId, pageId);
     return NextResponse.json(blocks);
   } catch (error) {
     return NextResponse.json(
       {
         error: error instanceof Error ? error.message : 'Failed to fetch blocks',
       },
-      { status: 500 }
+      { status: error instanceof Error && error.message === 'User not authenticated' ? 401 : 500 }
     );
   }
 }
 
 export async function POST(request: Request) {
   try {
-    const clerkUserId = await getCurrentUserId();
+    await getCurrentUserId(); // Verify authentication
     const body = await request.json();
     const { siteId, pageId, ...blockData } = body;
 
@@ -41,14 +41,14 @@ export async function POST(request: Request) {
       );
     }
 
-    const block = await createBlock(clerkUserId, siteId, pageId, blockData);
+    const block = await createBlock(siteId, pageId, blockData);
     return NextResponse.json(block, { status: 201 });
   } catch (error) {
     return NextResponse.json(
       {
         error: error instanceof Error ? error.message : 'Failed to create block',
       },
-      { status: 500 }
+      { status: error instanceof Error && error.message === 'User not authenticated' ? 401 : 500 }
     );
   }
 }

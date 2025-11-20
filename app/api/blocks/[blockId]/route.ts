@@ -8,7 +8,7 @@ export async function PATCH(
 ) {
   try {
     const { blockId } = await params;
-    const clerkUserId = await getCurrentUserId();
+    await getCurrentUserId(); // Verify authentication
     const body = await request.json();
     const { siteId, pageId, ...updates } = body;
 
@@ -19,14 +19,14 @@ export async function PATCH(
       );
     }
 
-    const block = await updateBlock(clerkUserId, siteId, pageId, blockId, updates);
+    const block = await updateBlock(siteId, pageId, blockId, updates);
     return NextResponse.json(block);
   } catch (error) {
     return NextResponse.json(
       {
         error: error instanceof Error ? error.message : 'Failed to update block',
       },
-      { status: 500 }
+      { status: error instanceof Error && error.message === 'User not authenticated' ? 401 : 500 }
     );
   }
 }
@@ -37,7 +37,7 @@ export async function DELETE(
 ) {
   try {
     const { blockId } = await params;
-    const clerkUserId = await getCurrentUserId();
+    await getCurrentUserId(); // Verify authentication
     const { searchParams } = new URL(request.url);
     const siteId = searchParams.get('siteId');
     const pageId = searchParams.get('pageId');
@@ -49,14 +49,14 @@ export async function DELETE(
       );
     }
 
-    await deleteBlock(clerkUserId, siteId, pageId, blockId);
+    await deleteBlock(siteId, pageId, blockId);
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json(
       {
         error: error instanceof Error ? error.message : 'Failed to delete block',
       },
-      { status: 500 }
+      { status: error instanceof Error && error.message === 'User not authenticated' ? 401 : 500 }
     );
   }
 }

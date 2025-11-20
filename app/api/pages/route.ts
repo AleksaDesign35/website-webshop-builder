@@ -4,7 +4,7 @@ import { createPage, getPages } from '@/lib/supabase/queries';
 
 export async function GET(request: Request) {
   try {
-    const clerkUserId = await getCurrentUserId();
+    await getCurrentUserId(); // Verify authentication
     const { searchParams } = new URL(request.url);
     const siteId = searchParams.get('siteId');
 
@@ -15,21 +15,21 @@ export async function GET(request: Request) {
       );
     }
 
-    const pages = await getPages(clerkUserId, siteId);
+    const pages = await getPages(siteId);
     return NextResponse.json(pages);
   } catch (error) {
     return NextResponse.json(
       {
         error: error instanceof Error ? error.message : 'Failed to fetch pages',
       },
-      { status: 500 }
+      { status: error instanceof Error && error.message === 'User not authenticated' ? 401 : 500 }
     );
   }
 }
 
 export async function POST(request: Request) {
   try {
-    const clerkUserId = await getCurrentUserId();
+    await getCurrentUserId(); // Verify authentication
     const body = await request.json();
     const { siteId, ...pageData } = body;
 
@@ -40,14 +40,14 @@ export async function POST(request: Request) {
       );
     }
 
-    const page = await createPage(clerkUserId, siteId, pageData);
+    const page = await createPage(siteId, pageData);
     return NextResponse.json(page, { status: 201 });
   } catch (error) {
     return NextResponse.json(
       {
         error: error instanceof Error ? error.message : 'Failed to create page',
       },
-      { status: 500 }
+      { status: error instanceof Error && error.message === 'User not authenticated' ? 401 : 500 }
     );
   }
 }

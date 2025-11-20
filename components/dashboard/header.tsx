@@ -1,8 +1,20 @@
-import { Bell, Search, User } from 'lucide-react';
+'use client';
+
+import { Bell, LogOut, Search, User } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 
 export function Header() {
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push('/login');
+    router.refresh();
+  };
+
   return (
     <header className="flex h-16 items-center justify-between border-border border-b bg-card px-6">
       {/* Logo/Naziv sajta - levo */}
@@ -29,8 +41,8 @@ export function Header() {
         <Button size="icon" variant="ghost">
           <Bell className="h-5 w-5" />
         </Button>
-        <Button size="icon" variant="ghost">
-          <User className="h-5 w-5" />
+        <Button size="icon" variant="ghost" onClick={handleLogout} title="Sign out">
+          <LogOut className="h-5 w-5" />
         </Button>
       </div>
     </header>

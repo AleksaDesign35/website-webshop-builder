@@ -8,7 +8,7 @@ export async function PATCH(
 ) {
   try {
     const { pageId } = await params;
-    const clerkUserId = await getCurrentUserId();
+    await getCurrentUserId(); // Verify authentication
     const body = await request.json();
     const { siteId, ...updates } = body;
 
@@ -19,14 +19,14 @@ export async function PATCH(
       );
     }
 
-    const page = await updatePage(clerkUserId, siteId, pageId, updates);
+    const page = await updatePage(siteId, pageId, updates);
     return NextResponse.json(page);
   } catch (error) {
     return NextResponse.json(
       {
         error: error instanceof Error ? error.message : 'Failed to update page',
       },
-      { status: 500 }
+      { status: error instanceof Error && error.message === 'User not authenticated' ? 401 : 500 }
     );
   }
 }
@@ -37,7 +37,7 @@ export async function DELETE(
 ) {
   try {
     const { pageId } = await params;
-    const clerkUserId = await getCurrentUserId();
+    await getCurrentUserId(); // Verify authentication
     const { searchParams } = new URL(request.url);
     const siteId = searchParams.get('siteId');
 
@@ -48,14 +48,14 @@ export async function DELETE(
       );
     }
 
-    await deletePage(clerkUserId, siteId, pageId);
+    await deletePage(siteId, pageId);
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json(
       {
         error: error instanceof Error ? error.message : 'Failed to delete page',
       },
-      { status: 500 }
+      { status: error instanceof Error && error.message === 'User not authenticated' ? 401 : 500 }
     );
   }
 }

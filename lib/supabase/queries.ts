@@ -1,44 +1,28 @@
-import { createServerClient, createAdminClient } from './server';
+import { createServerClient } from './server';
 import type { Database } from './types';
 
 type Tables = Database['public']['Tables'];
 
-// Helper function to get current user ID from Clerk
-async function getCurrentUserId(clerkUserId: string) {
+// Helper function to get current user ID from Supabase auth
+async function getCurrentUserId() {
   const supabase = await createServerClient();
-  const adminSupabase = createAdminClient();
+  
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
 
-  // First, try to find existing user
-  const { data: existingUser } = await supabase
-    .from('users')
-    .select('id')
-    .eq('clerk_user_id', clerkUserId)
-    .single();
-
-  if (existingUser) {
-    return existingUser.id;
+  if (error || !user) {
+    throw new Error('User not authenticated');
   }
 
-  // If user doesn't exist, create them using admin client (bypasses RLS)
-  const { data: newUser, error } = await adminSupabase
-    .from('users')
-    .insert({
-      clerk_user_id: clerkUserId,
-    })
-    .select('id')
-    .single();
-
-  if (error) {
-    throw new Error(`Failed to create user: ${error.message}`);
-  }
-
-  return newUser.id;
+  return user.id;
 }
 
 // Sites queries
-export async function getSites(clerkUserId: string) {
+export async function getSites() {
   const supabase = await createServerClient();
-  const userId = await getCurrentUserId(clerkUserId);
+  const userId = await getCurrentUserId();
 
   const { data, error } = await supabase
     .from('sites')
@@ -53,9 +37,9 @@ export async function getSites(clerkUserId: string) {
   return data;
 }
 
-export async function getSiteById(clerkUserId: string, siteId: string) {
+export async function getSiteById(siteId: string) {
   const supabase = await createServerClient();
-  const userId = await getCurrentUserId(clerkUserId);
+  const userId = await getCurrentUserId();
 
   const { data, error } = await supabase
     .from('sites')
@@ -71,12 +55,9 @@ export async function getSiteById(clerkUserId: string, siteId: string) {
   return data;
 }
 
-export async function createSite(
-  clerkUserId: string,
-  site: Tables['sites']['Insert']
-) {
+export async function createSite(site: Omit<Tables['sites']['Insert'], 'user_id'>) {
   const supabase = await createServerClient();
-  const userId = await getCurrentUserId(clerkUserId);
+  const userId = await getCurrentUserId();
 
   const { data, error } = await supabase
     .from('sites')
@@ -95,12 +76,11 @@ export async function createSite(
 }
 
 export async function updateSite(
-  clerkUserId: string,
   siteId: string,
   updates: Tables['sites']['Update']
 ) {
   const supabase = await createServerClient();
-  const userId = await getCurrentUserId(clerkUserId);
+  const userId = await getCurrentUserId();
 
   const { data, error } = await supabase
     .from('sites')
@@ -117,9 +97,9 @@ export async function updateSite(
   return data;
 }
 
-export async function deleteSite(clerkUserId: string, siteId: string) {
+export async function deleteSite(siteId: string) {
   const supabase = await createServerClient();
-  const userId = await getCurrentUserId(clerkUserId);
+  const userId = await getCurrentUserId();
 
   const { error } = await supabase
     .from('sites')
@@ -133,9 +113,9 @@ export async function deleteSite(clerkUserId: string, siteId: string) {
 }
 
 // Pages queries
-export async function getPages(clerkUserId: string, siteId: string) {
+export async function getPages(siteId: string) {
   const supabase = await createServerClient();
-  const userId = await getCurrentUserId(clerkUserId);
+  const userId = await getCurrentUserId();
 
   // Verify site belongs to user
   const { data: site } = await supabase
@@ -162,13 +142,9 @@ export async function getPages(clerkUserId: string, siteId: string) {
   return data;
 }
 
-export async function getPageById(
-  clerkUserId: string,
-  siteId: string,
-  pageId: string
-) {
+export async function getPageById(siteId: string, pageId: string) {
   const supabase = await createServerClient();
-  const userId = await getCurrentUserId(clerkUserId);
+  const userId = await getCurrentUserId();
 
   // Verify site belongs to user
   const { data: site } = await supabase
@@ -197,12 +173,11 @@ export async function getPageById(
 }
 
 export async function createPage(
-  clerkUserId: string,
   siteId: string,
-  page: Tables['pages']['Insert']
+  page: Omit<Tables['pages']['Insert'], 'site_id'>
 ) {
   const supabase = await createServerClient();
-  const userId = await getCurrentUserId(clerkUserId);
+  const userId = await getCurrentUserId();
 
   // Verify site belongs to user
   const { data: site } = await supabase
@@ -233,13 +208,12 @@ export async function createPage(
 }
 
 export async function updatePage(
-  clerkUserId: string,
   siteId: string,
   pageId: string,
   updates: Tables['pages']['Update']
 ) {
   const supabase = await createServerClient();
-  const userId = await getCurrentUserId(clerkUserId);
+  const userId = await getCurrentUserId();
 
   // Verify site belongs to user
   const { data: site } = await supabase
@@ -268,13 +242,9 @@ export async function updatePage(
   return data;
 }
 
-export async function deletePage(
-  clerkUserId: string,
-  siteId: string,
-  pageId: string
-) {
+export async function deletePage(siteId: string, pageId: string) {
   const supabase = await createServerClient();
-  const userId = await getCurrentUserId(clerkUserId);
+  const userId = await getCurrentUserId();
 
   // Verify site belongs to user
   const { data: site } = await supabase
@@ -300,13 +270,9 @@ export async function deletePage(
 }
 
 // Blocks queries
-export async function getBlocks(
-  clerkUserId: string,
-  siteId: string,
-  pageId: string
-) {
+export async function getBlocks(siteId: string, pageId: string) {
   const supabase = await createServerClient();
-  const userId = await getCurrentUserId(clerkUserId);
+  const userId = await getCurrentUserId();
 
   // Verify page belongs to user's site
   const { data: page } = await supabase
@@ -344,13 +310,12 @@ export async function getBlocks(
 }
 
 export async function createBlock(
-  clerkUserId: string,
   siteId: string,
   pageId: string,
-  block: Tables['blocks']['Insert']
+  block: Omit<Tables['blocks']['Insert'], 'page_id'>
 ) {
   const supabase = await createServerClient();
-  const userId = await getCurrentUserId(clerkUserId);
+  const userId = await getCurrentUserId();
 
   // Verify page belongs to user's site
   const { data: page } = await supabase
@@ -391,14 +356,13 @@ export async function createBlock(
 }
 
 export async function updateBlock(
-  clerkUserId: string,
   siteId: string,
   pageId: string,
   blockId: string,
   updates: Tables['blocks']['Update']
 ) {
   const supabase = await createServerClient();
-  const userId = await getCurrentUserId(clerkUserId);
+  const userId = await getCurrentUserId();
 
   // Verify block belongs to user's page
   const { data: block } = await supabase
@@ -447,13 +411,12 @@ export async function updateBlock(
 }
 
 export async function deleteBlock(
-  clerkUserId: string,
   siteId: string,
   pageId: string,
   blockId: string
 ) {
   const supabase = await createServerClient();
-  const userId = await getCurrentUserId(clerkUserId);
+  const userId = await getCurrentUserId();
 
   // Verify block belongs to user's page
   const { data: block } = await supabase

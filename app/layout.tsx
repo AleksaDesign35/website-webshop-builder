@@ -1,4 +1,3 @@
-import { ClerkProvider } from '@clerk/nextjs';
 import type { Metadata } from 'next';
 import { Providers } from '@/components/providers';
 import './globals.css';
@@ -14,18 +13,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider
-      appearance={{
-        elements: {
-          formButtonPrimary: 'bg-primary text-primary-foreground hover:bg-primary/90',
-        },
-      }}
-    >
-      <html className="dark" lang="en">
-        <body>
-          <Providers>{children}</Providers>
-        </body>
-      </html>
-    </ClerkProvider>
+    <html className="dark" lang="en">
+      <body>
+        <Providers>{children}</Providers>
+      </body>
+    </html>
   );
 }

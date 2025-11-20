@@ -1,24 +1,21 @@
 export interface Database {
   public: {
     Tables: {
-      users: {
+      profiles: {
         Row: {
           id: string;
-          clerk_user_id: string;
           email: string | null;
           created_at: string;
           updated_at: string;
         };
         Insert: {
-          id?: string;
-          clerk_user_id: string;
+          id: string;
           email?: string | null;
           created_at?: string;
           updated_at?: string;
         };
         Update: {
           id?: string;
-          clerk_user_id?: string;
           email?: string | null;
           created_at?: string;
           updated_at?: string;
