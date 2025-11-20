@@ -10,11 +10,12 @@ const navigation = [
   { name: 'Sites', href: '/dashboard/sites', icon: FileText },
   { name: 'Templates', href: '/dashboard/templates', icon: Sparkles },
   { name: 'Blocks', href: '/dashboard/blocks', icon: Layout },
-  { name: 'Settings', href: '/dashboard/settings', icon: Settings },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
+
+  const isSettingsActive = pathname === '/dashboard/settings';
 
   return (
     <div className="flex h-full w-64 flex-col border-border border-r bg-card">
@@ -27,7 +28,7 @@ export function Sidebar() {
               className={cn(
                 'flex items-center gap-3 rounded-lg px-3 py-2 font-medium text-sm transition-colors',
                 isActive
-                  ? 'bg-[#3aff7a]/10 text-[#3aff7a]'
+                  ? 'bg-primary/10 text-primary'
                   : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
               )}
               href={item.href}
@@ -39,6 +40,20 @@ export function Sidebar() {
           );
         })}
       </nav>
+      <div className="border-border border-t p-4">
+        <Link
+          className={cn(
+            'flex items-center gap-3 rounded-lg px-3 py-2 font-medium text-sm transition-colors',
+            isSettingsActive
+              ? 'bg-primary/10 text-primary'
+              : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+          )}
+          href="/dashboard/settings"
+        >
+          <Settings className="h-5 w-5" />
+          Settings
+        </Link>
+      </div>
     </div>
   );
 }

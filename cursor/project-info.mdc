@@ -138,6 +138,12 @@ Blocks must be reusable and independent.
 
 ### Styling
 - **ONLY** use Tailwind CSS classes (no inline styles, no CSS modules)
+- **NEVER** use hardcoded colors like `bg-[#3aff7a]` or `text-[#3aff7a]`
+- **ALWAYS** use CSS variables from `globals.css`:
+  - Use `bg-primary`, `text-primary`, `border-primary` instead of hardcoded colors
+  - Use `bg-primary/10`, `text-primary/50` for opacity variants
+  - Use `ring-primary/20` for focus rings
+  - Use `hover:border-primary/50` for hover states
 - Use design tokens from `globals.css` (e.g., `bg-background`, `text-foreground`)
 - Use Tailwind v4 syntax
 - Follow shadcn/ui patterns for components
