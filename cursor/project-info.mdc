@@ -7,6 +7,12 @@ alwaysApply: true
 This is a full SaaS platform built with Next.js (App Router), Supabase, Tailwind CSS, and Biome.  
 The goal is to allow users to generate complete websites and online shops extremely fast using a modular block-based system.
 
+## Language
+**IMPORTANT: All user-facing text, labels, buttons, and UI elements must be in English.**
+- All component labels, buttons, placeholders, and messages should be in English
+- Error messages and notifications should be in English
+- Only code comments and internal documentation can be in other languages
+
 ## Core Concept
 Users log in through Clerk and get access to a personal dashboard.  
 Inside the dashboard, every user can:

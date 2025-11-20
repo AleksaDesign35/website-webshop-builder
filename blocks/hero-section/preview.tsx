@@ -28,16 +28,27 @@ export function Preview({ params }: BlockPreviewProps) {
           color: data.textColor,
         }}
       >
-        <h1 className="mb-4 font-bold text-4xl md:text-5xl lg:text-6xl">
-          {data.title}
-        </h1>
-        <p className="mb-6 text-lg md:text-xl">{data.subtitle}</p>
-        <a
-          className="inline-block rounded-md bg-primary px-6 py-3 font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
-          href={data.ctaLink}
-        >
-          {data.ctaText}
-        </a>
+        {data.headline && (
+          <p className="mb-2 font-semibold text-sm uppercase tracking-wide opacity-80">
+            {data.headline}
+          </p>
+        )}
+        {data.title && (
+          <h1 className="mb-4 font-bold text-4xl md:text-5xl lg:text-6xl">
+            {data.title}
+          </h1>
+        )}
+        {data.description && (
+          <p className="mb-6 text-lg md:text-xl">{data.description}</p>
+        )}
+        {data.ctaText && (
+          <a
+            className="inline-block rounded-md bg-primary px-6 py-3 font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+            href={data.ctaLink}
+          >
+            {data.ctaText}
+          </a>
+        )}
       </div>
     </div>
   );
