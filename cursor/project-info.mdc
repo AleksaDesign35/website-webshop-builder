@@ -1,0 +1,215 @@
+---
+alwaysApply: true
+---
+
+# Project Description
+
+This is a full SaaS platform built with Next.js (App Router), Supabase, Tailwind CSS, and Biome.  
+The goal is to allow users to generate complete websites and online shops extremely fast using a modular block-based system.
+
+## Core Concept
+Users log in through Clerk and get access to a personal dashboard.  
+Inside the dashboard, every user can:
+
+- Create unlimited **Sites**
+- Each Site contains multiple **Pages**
+- Each Page contains ordered **Blocks**
+- Every Block has editable parameters (text, images, layout, colors, settings)
+- Pages can be previewed, published, and shared through a generated preview link
+
+The app also includes:
+- A Block Library (all reusable blocks with presets)
+- Pre-made Page Templates
+- Fast creation workflows based on industry categories (e.g., restaurants, fitness, electronics, personal brands, local services)
+
+## Technical Structure
+
+### Project Structure
+- All code lives in root directory (not `src/`)
+- `app/` - Next.js App Router pages and layouts
+- `components/` - React components
+- `components/ui/` - shadcn/ui components
+- `lib/` - Utility functions and helpers
+- `hooks/` - Custom React hooks
+
+### Tech Stack
+- **Next.js 15.4.6** (App Router) with Turbopack
+- **TypeScript 5** (strict mode enabled)
+- **React 19.1.0** + **React DOM 19.1.0**
+- **Supabase** (DB + Auth mapping + Storage)
+- **Clerk** (user auth)
+- **Tailwind CSS v4** (with `@theme` inline syntax)
+- **Biome/Ultracite 5.2.3** (formatter + linter)
+- **shadcn/ui** (New York style, RSC enabled)
+- **Lucide React** (icon library)
+- **Zod 4.0.17** (validation)
+- **React Hook Form** (forms)
+- **TanStack Query** (data fetching)
+- **Zustand** (global state)
+- **Framer Motion** (optional, for subtle animations)
+
+### Package Manager
+- **pnpm 10.6.5** (strictly use pnpm, never npm or yarn)
+
+## Configuration Files
+
+### TypeScript (`tsconfig.json`)
+- Target: ES2017
+- Strict mode enabled
+- Path aliases: `@/*` maps to `./*`
+- Module resolution: bundler
+- JSX: preserve
+
+### Biome/Ultracite (`biome.jsonc`)
+- Extends: `ultracite`
+- Includes: `**/*.ts`, `**/*.tsx`, `**/*.js`, `**/*.jsx`
+- Rules: `noNamespaceImport` as warning
+
+### Tailwind CSS v4 (`app/globals.css`)
+- Uses `@import "tailwindcss"` and `@import "tw-animate-css"`
+- Custom dark variant: `@custom-variant dark (&:is(.dark *))`
+- Theme variables defined in `@theme inline` block
+- Color system uses OKLCH color space
+- CSS variables for all design tokens (colors, radius, etc.)
+
+### Next.js (`next.config.ts`)
+- Environment: `NEXT_PUBLIC_API_BASE_URL` configured
+- Image domains: Unsplash configured
+
+### shadcn/ui (`components.json`)
+- Style: `new-york`
+- RSC: enabled
+- Base color: `slate`
+- CSS variables: enabled
+- Aliases:
+  - `@/components` → `./components`
+  - `@/lib/utils` → `./lib/utils`
+  - `@/components/ui` → `./components/ui`
+  - `@/lib` → `./lib`
+  - `@/hooks` → `./hooks`
+
+## Data Model
+- `users` (Clerk user ID mapping)
+- `sites` (site-level configuration)
+- `pages` (belong to sites)
+- `blocks` (belong to pages; JSON-based params)
+
+All Supabase tables use RLS policies where each user can only access their own objects.
+
+## Dashboard Requirements
+The dashboard is full dark mode:
+- Background: deep black / charcoal
+- Accent color: neon green (#3aff7a)
+- Secondary accents: gray tones (#1a1a1a, #2d2d2d)
+- UI style: modern, cyber, clean, consistent
+
+Dashboard features:
+- Site list
+- Page list inside each site
+- Block editor
+- Live preview mode
+- Publish flow (generates public URL)
+- Template browser (blocks + pre-made pages)
+
+## Block Architecture
+Every block follows this structure:
+- `schema` → Zod validation
+- `editor` → settings panel in the dashboard
+- `preview` → rendered preview inside builder
+- `renderer` → public website rendering
+- `params` → JSON object containing block data
+
+Blocks must be reusable and independent.
+
+## Code Style & Rules
+
+### TypeScript
+- **ALWAYS** use TypeScript (never JavaScript)
+- Strict mode enabled - handle null/undefined properly
+- Use proper types, avoid `any`
+- Use `Readonly<>` for props when appropriate
+- Use type imports: `import type { ... }`
+
+### Formatting & Linting
+- **ALWAYS** use Ultracite for formatting: `pnpm format`
+- **ALWAYS** use Ultracite for linting: `pnpm lint`
+- Run formatting before committing
+- Follow Biome/Ultracite rules
+
+### Styling
+- **ONLY** use Tailwind CSS classes (no inline styles, no CSS modules)
+- Use design tokens from `globals.css` (e.g., `bg-background`, `text-foreground`)
+- Use Tailwind v4 syntax
+- Follow shadcn/ui patterns for components
+- Use `cn()` utility from `@/lib/utils` for conditional classes
+
+### File Organization
+- Use path aliases: `@/components`, `@/lib`, `@/hooks`
+- Components in `components/` directory
+- UI components in `components/ui/`
+- Utilities in `lib/`
+- Custom hooks in `hooks/`
+- Always show file paths when generating code
+
+### React Patterns
+- Use Server Components by default (RSC)
+- Use Client Components only when needed (`'use client'`)
+- Use proper React 19 patterns
+- Avoid unnecessary abstractions
+- Keep components small and focused
+- Use proper prop types
+
+### Naming Conventions
+- Components: PascalCase (e.g., `SiteList.tsx`)
+- Files: match component name
+- Utilities: camelCase (e.g., `formatDate.ts`)
+- Hooks: start with `use` (e.g., `useSites.ts`)
+- Types: PascalCase (e.g., `Site`, `BlockParams`)
+
+### Commit Messages
+Follow conventional commits with custom types:
+- `feat[new]:` - New feature
+- `feat[upd]:` - Feature update
+- `fix` - Bug fix
+- `docs` - Documentation
+- `style` - Formatting, styling
+- `refactor` - Code refactoring
+- `perf` - Performance improvement
+- `test` - Tests
+- `build` - Build system
+- `ci` - CI/CD
+- `chore` - Maintenance
+- `revert` - Revert commit
+
+## AI Requirements
+Cursor should:
+- Maintain consistent code structure
+- Use TypeScript everywhere (strict mode)
+- Use Tailwind CSS only (v4 syntax)
+- Use Ultracite for formatting/linting
+- Avoid unnecessary abstractions
+- Keep UI extremely clean and repeatable
+- Always show file paths when generating code
+- Follow BEM-friendly naming when needed
+- Follow defined dark + green design system
+- Use modern, scalable patterns
+- Generate Supabase SQL in clean format
+- Use pnpm (never npm or yarn)
+- Use path aliases (`@/*`)
+- Use `cn()` utility for class merging
+- Follow shadcn/ui patterns
+- Use proper React 19 patterns (RSC by default)
+
+## Scripts
+- `pnpm dev` - Start dev server with Turbopack and debug
+- `pnpm dev:debug` - Start dev server with debug
+- `pnpm build` - Build for production
+- `pnpm start` - Start production server
+- `pnpm lint` - Run Ultracite linter
+- `pnpm format` - Run Ultracite formatter
+
+## Goal of the Platform
+Create a super-fast website builder for real businesses.  
+Users can build a complete website (or webshop) in one day, by combining polished modular blocks with clean UX and beautiful defaults.
+
+The system must be production-ready, scalable, consistent, and easy to extend with new block types.
