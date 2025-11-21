@@ -1,13 +1,15 @@
 'use client';
 
-import { ArrowLeft, Plus } from 'lucide-react';
+import { ArrowLeft, Plus, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { useSites } from '@/hooks/use-sites';
+import { useSites, useUpdateSite } from '@/hooks/use-sites';
 import { useCreatePage } from '@/hooks/use-pages';
 import { NewPageModal } from '@/components/dashboard/new-page-modal';
 import { PageList } from '@/components/dashboard/page-list';
+import { SiteSettings } from '@/components/dashboard/site-settings';
+import type { SiteThemeSettings } from '@/components/dashboard/site-settings';
 import { Button } from '@/components/ui/button';
 
 interface SiteDetailPageProps {
@@ -17,8 +19,10 @@ interface SiteDetailPageProps {
 export default function SiteDetailPage({ params }: SiteDetailPageProps) {
   const [siteId, setSiteId] = useState<string>('');
   const [showNewPageModal, setShowNewPageModal] = useState(false);
+  const [showSiteSettings, setShowSiteSettings] = useState(false);
   const { data: sites } = useSites();
   const createPage = useCreatePage();
+  const updateSite = useUpdateSite();
 
   // Resolve params
   useEffect(() => {
@@ -46,6 +50,24 @@ export default function SiteDetailPage({ params }: SiteDetailPageProps) {
     }
   };
 
+  const handleSaveSiteSettings = async (settings: SiteThemeSettings) => {
+    try {
+      await updateSite.mutateAsync({
+        siteId,
+        updates: {
+          theme_settings: settings,
+        },
+      });
+      toast.success('Site settings saved successfully!');
+      setShowSiteSettings(false);
+    } catch (error) {
+      console.error('Failed to save site settings:', error);
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to save site settings'
+      );
+    }
+  };
+
   if (!siteId) {
     return <div>Loading...</div>;
   }
@@ -66,10 +88,19 @@ export default function SiteDetailPage({ params }: SiteDetailPageProps) {
           <h1 className="font-bold text-3xl">{site.name}</h1>
           <p className="mt-1 text-muted-foreground">{site.description}</p>
         </div>
-        <Button onClick={() => setShowNewPageModal(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          New Page
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={() => setShowSiteSettings(true)}
+            variant="outline"
+          >
+            <Settings className="mr-2 h-4 w-4" />
+            Site Settings
+          </Button>
+          <Button onClick={() => setShowNewPageModal(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            New Page
+          </Button>
+        </div>
       </div>
 
       <PageList siteId={siteId} />
@@ -78,6 +109,13 @@ export default function SiteDetailPage({ params }: SiteDetailPageProps) {
         onClose={() => setShowNewPageModal(false)}
         onSubmit={handleNewPage}
         open={showNewPageModal}
+      />
+
+      <SiteSettings
+        onClose={() => setShowSiteSettings(false)}
+        onSave={handleSaveSiteSettings}
+        open={showSiteSettings}
+        settings={(site.theme_settings as Record<string, unknown>) || null}
       />
     </div>
   );

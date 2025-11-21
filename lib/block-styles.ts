@@ -47,13 +47,13 @@ export function optimizeInlineStyles(
   
   for (const [key, value] of Object.entries(styles)) {
     if (value !== undefined && value !== null && value !== '') {
-      // Convert camelCase to kebab-case for CSS properties
-      const cssKey = key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
+      // Keep camelCase for React inline styles (React expects camelCase, not kebab-case)
+      const cssKey = key;
       
       // Handle numeric values - add px for spacing properties
       if (typeof value === 'number') {
         const spacingProps = ['padding', 'margin', 'top', 'bottom', 'left', 'right', 'width', 'height', 'gap'];
-        const isSpacing = spacingProps.some(prop => cssKey.includes(prop));
+        const isSpacing = spacingProps.some(prop => cssKey.toLowerCase().includes(prop));
         optimized[cssKey] = isSpacing ? `${value}px` : String(value);
       } else {
         optimized[cssKey] = String(value);

@@ -9,7 +9,7 @@ import { Header1, Header2, Footer1, Footer2 } from '@/components/site';
 // Optimize for performance - minimize React hydration
 export const dynamic = 'force-dynamic';
 
-interface PreviewPageProps {
+interface LivePageProps {
   params: Promise<{ siteId: string; pageId: string }>;
 }
 
@@ -31,13 +31,28 @@ function getContainerClass(containerWidth: string, maxWidth?: number): string {
   }
 }
 
-export default async function PreviewPage({ params }: PreviewPageProps) {
+export default async function LivePage({ params }: LivePageProps) {
   const { siteId, pageId } = await params;
 
   try {
     // Fetch site, page and blocks from Supabase (public access - no auth required)
     const site = await getSiteByIdPublic(siteId);
     const page = await getPageByIdPublic(siteId, pageId);
+    
+    // Only show published pages on live route
+    if (!page.is_active) {
+      return (
+        <div className="flex min-h-screen items-center justify-center">
+          <div className="text-center">
+            <h2 className="mb-2 font-semibold text-xl">Page not published</h2>
+            <p className="text-muted-foreground">
+              This page is not yet published and cannot be viewed publicly.
+            </p>
+          </div>
+        </div>
+      );
+    }
+    
     const dbBlocks = await getBlocksPublic(siteId, pageId);
     
     // Parse site theme settings
@@ -160,3 +175,4 @@ export default async function PreviewPage({ params }: PreviewPageProps) {
     );
   }
 }
+

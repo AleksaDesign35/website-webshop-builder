@@ -7,6 +7,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ImageUpload } from '@/components/dashboard/image-upload';
+import { FeatureEditor, type Feature } from '@/components/dashboard/feature-editor';
+import { TextClassEditor, type TextClass } from '@/components/dashboard/text-class-editor';
 import type { BlockEditorProps } from '../types';
 import { type Hero5Params, schema } from './schema';
 
@@ -93,11 +96,12 @@ export function Editor({ params, onChange }: BlockEditorProps) {
       <TabsContent className="mt-4 space-y-6" value="content">
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="title">Title (word "groceries" will be green)</Label>
-            <Input
-              id="title"
-              {...form.register('title')}
-              onChange={(e) => form.setValue('title', e.target.value)}
+            <TextClassEditor
+              value={watchedValues.title || ''}
+              onChange={(value) => form.setValue('title', value)}
+              classes={(watchedValues.titleClasses || []) as TextClass[]}
+              onClassesChange={(classes) => form.setValue('titleClasses', classes as any)}
+              label="Title"
             />
           </div>
 
@@ -121,22 +125,26 @@ export function Editor({ params, onChange }: BlockEditorProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="features">Features (comma separated)</Label>
-            <Input
-              id="features"
-              {...form.register('features')}
-              onChange={(e) => form.setValue('features', e.target.value)}
-              placeholder="Feature 1,Feature 2,Feature 3,Feature 4"
+            <Label>Features</Label>
+            <FeatureEditor
+              features={(watchedValues.features || []) as Feature[]}
+              onChange={(features) => form.setValue('features', features as any)}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="image">Image URL</Label>
+            <Label htmlFor="image">Image</Label>
+            <ImageUpload
+              value={watchedValues.image}
+              onChange={(url) => form.setValue('image', url)}
+            />
             <Input
               id="image"
               {...form.register('image')}
               onChange={(e) => form.setValue('image', e.target.value)}
               type="url"
+              placeholder="Or enter image URL"
+              className="mt-2"
             />
           </div>
         </div>

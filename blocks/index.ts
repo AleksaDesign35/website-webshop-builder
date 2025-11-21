@@ -15,6 +15,8 @@ export const blocksRegistry: Record<string, () => Promise<BlockDefinition>> = {
   'hero-3': () => import('./hero-3').then((m) => m.block),
   'hero-4': () => import('./hero-4').then((m) => m.block),
   'hero-5': () => import('./hero-5').then((m) => m.block),
+  // Custom Code Block
+  'code-block': () => import('./code-block').then((m) => m.block),
   // Add more blocks here as you create them:
   // 'text-block': () => import('./text-block').then((m) => m.block),
   // 'image-gallery': () => import('./image-gallery').then((m) => m.block),

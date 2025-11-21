@@ -9,6 +9,7 @@
     "lint": "biome check .",
     "format": "biome format --write .",
     "setup-db": "tsx scripts/setup-database.ts",
+    "setup-storage": "tsx scripts/setup-storage.ts",
     "db:types": "tsx scripts/generate-types.ts",
     "db:migration:new": "supabase migration new",
     "db:migration:up": "supabase migration up",

@@ -1,6 +1,9 @@
+'use client';
+
 import type { BlockRendererProps } from '../types';
 import { type Hero5Params, schema } from './schema';
 import { optimizeInlineStyles } from '@/lib/block-styles';
+import * as LucideIcons from 'lucide-react';
 
 export function Renderer({ params, blockId }: BlockRendererProps) {
   const parseResult = schema.safeParse(params);
@@ -18,7 +21,34 @@ export function Renderer({ params, blockId }: BlockRendererProps) {
     paddingBottom: data.enablePadding ? `${data.paddingBottom}px` : undefined,
   });
 
-  const features = data.features ? data.features.split(',').map(f => f.trim()).filter(Boolean) : [];
+  // Handle both old string format and new array format
+  let features: Array<{ id: string; text: string; iconType: string; iconName?: string; iconUrl?: string }> = [];
+  
+  if (Array.isArray(data.features)) {
+    features = data.features;
+  } else if (typeof data.features === 'string') {
+    // Migrate from old format
+    features = data.features.split(',').map((f, i) => ({
+      id: `feature-${i}`,
+      text: f.trim(),
+      iconType: 'lucide',
+      iconName: 'Check',
+    })).filter(f => f.text);
+  }
+  
+  const getIconComponent = (feature: typeof features[0]) => {
+    if (feature.iconType === 'lucide' && feature.iconName) {
+      const IconComponent = (LucideIcons as any)[feature.iconName];
+      if (IconComponent) {
+        return <IconComponent className="h-5 w-5 flex-shrink-0 text-white" />;
+      }
+    } else if (feature.iconUrl) {
+      return <img src={feature.iconUrl} alt="" className="h-5 w-5 flex-shrink-0 object-contain" />;
+    }
+    // Default check icon
+    const CheckIcon = (LucideIcons as any).Check;
+    return CheckIcon ? <CheckIcon className="h-5 w-5 flex-shrink-0 text-white" /> : null;
+  };
 
   return (
     <section
@@ -30,20 +60,75 @@ export function Renderer({ params, blockId }: BlockRendererProps) {
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Left: Text Content */}
           <div>
-            {data.title && (
-              <h1 className="mb-4 text-4xl font-bold leading-tight text-gray-900 sm:text-5xl md:text-6xl">
-                {data.title.split(' ').map((word, i, arr) => {
-                  if (word.toLowerCase() === 'groceries') {
-                    return (
-                      <span key={i} className="text-green-600">
-                        {word}{' '}
-                      </span>
-                    );
-                  }
-                  return <span key={i}>{word} </span>;
-                })}
-              </h1>
-            )}
+            {data.title && (() => {
+              // Parse HTML and apply styles
+              const titleClasses = (data.titleClasses || []) as Array<{
+                className: string;
+                color?: string;
+                fontSize?: number;
+                fontWeight?: string;
+                backgroundColor?: string;
+              }>;
+
+              // Parse HTML string and create React elements
+              const parseHTML = (html: string) => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(`<div>${html}</div>`, 'text/html');
+                const div = doc.body.firstChild as HTMLElement;
+                
+                if (!div) return html;
+
+                const createElements = (node: Node, index: number = 0): React.ReactNode[] => {
+                  const elements: React.ReactNode[] = [];
+                  let currentIndex = index;
+
+                  Array.from(node.childNodes).forEach((child) => {
+                    if (child.nodeType === Node.TEXT_NODE) {
+                      const text = child.textContent || '';
+                      if (text.trim()) {
+                        elements.push(text);
+                      }
+                    } else if (child.nodeType === Node.ELEMENT_NODE) {
+                      const element = child as HTMLElement;
+                      if (element.tagName === 'SPAN' && element.className) {
+                        const className = element.className;
+                        const classDef = titleClasses.find(c => c.className === className);
+                        const children = createElements(element, currentIndex);
+                        elements.push(
+                          <span
+                            key={currentIndex}
+                            className={className}
+                            style={{
+                              color: classDef?.color,
+                              fontSize: classDef?.fontSize ? `${classDef.fontSize}px` : undefined,
+                              fontWeight: classDef?.fontWeight,
+                              backgroundColor: classDef?.backgroundColor,
+                            }}
+                          >
+                            {children}
+                          </span>
+                        );
+                        currentIndex++;
+                      } else {
+                        elements.push(...createElements(element, currentIndex));
+                      }
+                    }
+                  });
+
+                  return elements;
+                };
+
+                return createElements(div);
+              };
+
+              const titleElements = parseHTML(data.title);
+
+              return (
+                <h1 className="mb-4 text-4xl font-bold leading-tight text-gray-900 sm:text-5xl md:text-6xl">
+                  {titleElements.length > 0 ? titleElements : data.title}
+                </h1>
+              );
+            })()}
             {data.description && (
               <p className="mb-6 text-lg text-gray-600 leading-relaxed">
                 {data.description}
@@ -55,16 +140,16 @@ export function Renderer({ params, blockId }: BlockRendererProps) {
               <input
                 type="text"
                 placeholder={data.searchPlaceholder}
-                className="flex-1 rounded-lg border border-gray-300 bg-green-50 px-4 py-3 text-base focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500/20"
+                className="flex-1 rounded-lg border border-gray-300 bg-green-50 px-4 py-3 text-base text-gray-900 placeholder:text-gray-500 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500/20"
                 readOnly
               />
               <button
                 type="button"
-                className="rounded-lg bg-green-600 px-6 py-3 text-white transition-all hover:bg-green-700"
+                className="rounded-lg bg-green-600 px-6 py-3 text-white transition-all hover:bg-green-700 hover:shadow-lg"
                 disabled
               >
                 <svg
-                  className="h-5 w-5"
+                  className="h-5 w-5 text-white"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -82,22 +167,12 @@ export function Renderer({ params, blockId }: BlockRendererProps) {
             {/* Features List */}
             {features.length > 0 && (
               <div className="grid grid-cols-2 gap-4">
-                {features.map((feature, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <svg
-                      className="h-5 w-5 flex-shrink-0 text-green-600"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M5 13l4 4L19 7"
-                      />
-                    </svg>
-                    <span className="text-gray-700">{feature}</span>
+                {features.map((feature) => (
+                  <div key={feature.id} className="flex items-center gap-2">
+                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green-600">
+                      {getIconComponent(feature)}
+                    </div>
+                    <span className="text-gray-700">{feature.text}</span>
                   </div>
                 ))}
               </div>

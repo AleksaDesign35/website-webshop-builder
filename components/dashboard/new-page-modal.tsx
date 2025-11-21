@@ -35,17 +35,19 @@ export function NewPageModal({ open, onClose, onSubmit }: NewPageModalProps) {
 
   return (
     <Dialog onOpenChange={onClose} open={open}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Create New Page</DialogTitle>
-          <DialogDescription>
+      <DialogContent className="!w-[80vw] !max-w-none p-8">
+        <DialogHeader className="mb-6">
+          <DialogTitle className="text-2xl">Create New Page</DialogTitle>
+          <DialogDescription className="text-base">
             Add a new page to your site. You can edit it later.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Page Name *</Label>
+          <div className="space-y-6 py-4">
+            <div className="space-y-3">
+              <Label htmlFor="name" className="text-base">
+                Page Name *
+              </Label>
               <Input
                 autoFocus
                 id="name"
@@ -53,23 +55,33 @@ export function NewPageModal({ open, onClose, onSubmit }: NewPageModalProps) {
                 placeholder="Home"
                 required
                 value={name}
+                className="h-12"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
+            <div className="space-y-3">
+              <Label htmlFor="description" className="text-base">
+                Description
+              </Label>
               <Input
                 id="description"
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Main landing page"
                 value={description}
+                className="h-12"
               />
             </div>
           </div>
-          <DialogFooter>
-            <Button onClick={onClose} type="button" variant="outline">
+          <DialogFooter className="gap-4 border-t pt-6">
+            <Button
+              onClick={onClose}
+              type="button"
+              variant="outline"
+              size="lg"
+              className="min-w-24"
+            >
               Cancel
             </Button>
-            <Button disabled={!name.trim()} type="submit">
+            <Button disabled={!name.trim()} type="submit" size="lg" className="min-w-32">
               Create Page
             </Button>
           </DialogFooter>

@@ -78,7 +78,12 @@ export function useUpdateSite() {
       updates,
     }: {
       siteId: string;
-      updates: { name?: string; description?: string | null; logo_url?: string | null };
+      updates: {
+        name?: string;
+        description?: string | null;
+        logo_url?: string | null;
+        theme_settings?: Record<string, unknown> | null;
+      };
     }) => {
       const response = await fetch(`/api/sites/${siteId}`, {
         method: 'PATCH',

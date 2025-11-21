@@ -28,6 +28,7 @@ export interface Database {
           name: string;
           description: string | null;
           logo_url: string | null;
+          theme_settings: Record<string, unknown> | null;
           created_at: string;
           updated_at: string;
         };
@@ -37,6 +38,7 @@ export interface Database {
           name: string;
           description?: string | null;
           logo_url?: string | null;
+          theme_settings?: Record<string, unknown> | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -46,6 +48,7 @@ export interface Database {
           name?: string;
           description?: string | null;
           logo_url?: string | null;
+          theme_settings?: Record<string, unknown> | null;
           created_at?: string;
           updated_at?: string;
         };

@@ -55,6 +55,32 @@ export async function getSiteById(siteId: string) {
   return data;
 }
 
+/**
+ * Get site by ID (public access - no auth required)
+ * Used for preview pages that should be accessible to anyone
+ * Uses admin client to bypass RLS
+ */
+export async function getSiteByIdPublic(siteId: string) {
+  const { createAdminClient } = await import('./server');
+  const supabase = createAdminClient();
+
+  const { data, error } = await supabase
+    .from('sites')
+    .select('*')
+    .eq('id', siteId)
+    .single();
+
+  if (error) {
+    throw new Error(`Failed to fetch site: ${error.message}`);
+  }
+
+  if (!data) {
+    throw new Error('Site not found');
+  }
+
+  return data;
+}
+
 export async function createSite(
   site: Omit<Tables['sites']['Insert'], 'user_id'>,
   userId?: string
@@ -183,6 +209,44 @@ export async function getPageById(siteId: string, pageId: string) {
 
   if (error) {
     throw new Error(`Failed to fetch page: ${error.message}`);
+  }
+
+  return data;
+}
+
+/**
+ * Get page by ID (public access - no auth required)
+ * Used for preview pages that should be accessible to anyone
+ * Uses admin client to bypass RLS
+ */
+export async function getPageByIdPublic(siteId: string, pageId: string) {
+  const { createAdminClient } = await import('./server');
+  const supabase = createAdminClient();
+
+  // Verify site exists
+  const { data: site, error: siteError } = await supabase
+    .from('sites')
+    .select('id')
+    .eq('id', siteId)
+    .single();
+
+  if (siteError || !site) {
+    throw new Error('Site not found');
+  }
+
+  const { data, error } = await supabase
+    .from('pages')
+    .select('*')
+    .eq('id', pageId)
+    .eq('site_id', siteId)
+    .single();
+
+  if (error) {
+    throw new Error(`Failed to fetch page: ${error.message}`);
+  }
+
+  if (!data) {
+    throw new Error('Page not found');
   }
 
   return data;
@@ -323,6 +387,40 @@ export async function getBlocks(siteId: string, pageId: string) {
   }
 
   return data;
+}
+
+/**
+ * Get blocks for a page (public access - no auth required)
+ * Used for preview pages that should be accessible to anyone
+ * Uses admin client to bypass RLS
+ */
+export async function getBlocksPublic(siteId: string, pageId: string) {
+  const { createAdminClient } = await import('./server');
+  const supabase = createAdminClient();
+
+  // Verify page belongs to site
+  const { data: page, error: pageError } = await supabase
+    .from('pages')
+    .select('site_id')
+    .eq('id', pageId)
+    .eq('site_id', siteId)
+    .single();
+
+  if (pageError || !page) {
+    throw new Error('Page not found or does not belong to this site');
+  }
+
+  const { data, error } = await supabase
+    .from('blocks')
+    .select('*')
+    .eq('page_id', pageId)
+    .order('display_order', { ascending: true });
+
+  if (error) {
+    throw new Error(`Failed to fetch blocks: ${error.message}`);
+  }
+
+  return data || [];
 }
 
 export async function createBlock(

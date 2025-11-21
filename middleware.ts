@@ -40,7 +40,8 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname === '/' ||
     request.nextUrl.pathname.startsWith('/login') ||
     request.nextUrl.pathname.startsWith('/signup') ||
-    request.nextUrl.pathname.startsWith('/preview');
+    request.nextUrl.pathname.startsWith('/preview') ||
+    request.nextUrl.pathname.startsWith('/live');
 
   // If accessing a protected route and not authenticated, redirect to login
   if (!isPublicRoute && !user) {

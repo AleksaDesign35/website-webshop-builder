@@ -61,28 +61,30 @@ export function PageSettings({ open, onClose, settings, onSave }: PageSettingsPr
 
   return (
     <Dialog onOpenChange={onClose} open={open}>
-      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Page Settings</DialogTitle>
-          <DialogDescription>
+      <DialogContent className="!max-h-[90vh] !w-[80vw] !max-w-none overflow-y-auto p-8">
+        <DialogHeader className="mb-6">
+          <DialogTitle className="text-2xl">Page Settings</DialogTitle>
+          <DialogDescription className="text-base">
             Configure page-wide settings like container width, background, and typography
           </DialogDescription>
         </DialogHeader>
 
-        <form className="mt-4 space-y-6" onSubmit={handleSubmit}>
+        <form className="space-y-8" onSubmit={handleSubmit}>
           {/* Layout Section */}
-          <div>
-            <h3 className="mb-4 font-semibold text-sm">Layout</h3>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="containerWidth">Container Width</Label>
+          <div className="rounded-lg border bg-muted/30 p-6">
+            <h3 className="mb-6 text-lg font-semibold">Layout</h3>
+            <div className="space-y-6">
+              <div className="space-y-3">
+                <Label htmlFor="containerWidth" className="text-base">
+                  Container Width
+                </Label>
                 <Select
                   value={watchedValues.containerWidth || 'container'}
                   onValueChange={(value) => {
                     form.setValue('containerWidth', value as 'full' | 'container' | 'narrow' | 'wide');
                   }}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="h-12">
                     <SelectValue placeholder="Select width" />
                   </SelectTrigger>
                   <SelectContent>
@@ -94,8 +96,10 @@ export function PageSettings({ open, onClose, settings, onSave }: PageSettingsPr
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="maxWidth">Max Width (px)</Label>
+              <div className="space-y-3">
+                <Label htmlFor="maxWidth" className="text-base">
+                  Max Width (px)
+                </Label>
                 <Input
                   id="maxWidth"
                   min={320}
@@ -107,8 +111,9 @@ export function PageSettings({ open, onClose, settings, onSave }: PageSettingsPr
                     form.setValue('maxWidth', value);
                   }}
                   placeholder="Auto (based on container width)"
+                  className="h-12"
                 />
-                <p className="text-muted-foreground text-xs">
+                <p className="text-muted-foreground text-sm">
                   Override container width with custom max width
                 </p>
               </div>
@@ -116,11 +121,13 @@ export function PageSettings({ open, onClose, settings, onSave }: PageSettingsPr
           </div>
 
           {/* Background Section */}
-          <div>
-            <h3 className="mb-4 font-semibold text-sm">Background</h3>
-            <div className="space-y-2">
-              <Label htmlFor="backgroundColor">Background Color</Label>
-              <div className="flex gap-2">
+          <div className="rounded-lg border bg-muted/30 p-6">
+            <h3 className="mb-6 text-lg font-semibold">Background</h3>
+            <div className="space-y-3">
+              <Label htmlFor="backgroundColor" className="text-base">
+                Background Color
+              </Label>
+              <div className="flex gap-3">
                 <Input
                   id="backgroundColor"
                   type="color"
@@ -128,7 +135,7 @@ export function PageSettings({ open, onClose, settings, onSave }: PageSettingsPr
                   onChange={(e) => {
                     form.setValue('backgroundColor', e.target.value);
                   }}
-                  className="h-10 w-20 cursor-pointer"
+                  className="h-12 w-24 cursor-pointer"
                 />
                 <Input
                   type="text"
@@ -137,20 +144,23 @@ export function PageSettings({ open, onClose, settings, onSave }: PageSettingsPr
                     form.setValue('backgroundColor', e.target.value);
                   }}
                   placeholder="#ffffff"
+                  className="flex-1"
                 />
               </div>
-              <p className="text-muted-foreground text-xs">
+              <p className="text-muted-foreground text-sm">
                 This background color applies to the page container, not individual blocks
               </p>
             </div>
           </div>
 
           {/* Typography Section */}
-          <div>
-            <h3 className="mb-4 font-semibold text-sm">Typography</h3>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="rootFontSize">Root Font Size (px)</Label>
+          <div className="rounded-lg border bg-muted/30 p-6">
+            <h3 className="mb-6 text-lg font-semibold">Typography</h3>
+            <div className="space-y-6">
+              <div className="space-y-3">
+                <Label htmlFor="rootFontSize" className="text-base">
+                  Root Font Size (px)
+                </Label>
                 <Input
                   id="rootFontSize"
                   min={12}
@@ -160,21 +170,24 @@ export function PageSettings({ open, onClose, settings, onSave }: PageSettingsPr
                   onChange={(e) => {
                     form.setValue('rootFontSize', Number.parseInt(e.target.value, 10) || 16);
                   }}
+                  className="h-12"
                 />
-                <p className="text-muted-foreground text-xs">
+                <p className="text-muted-foreground text-sm">
                   Base font size for the page (affects rem calculations)
                 </p>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="fontFamily">Font Family</Label>
+              <div className="space-y-3">
+                <Label htmlFor="fontFamily" className="text-base">
+                  Font Family
+                </Label>
                 <Select
                   value={watchedValues.fontFamily || 'system-ui'}
                   onValueChange={(value) => {
                     form.setValue('fontFamily', value);
                   }}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="h-12">
                     <SelectValue placeholder="Select font" />
                   </SelectTrigger>
                   <SelectContent>
@@ -189,8 +202,10 @@ export function PageSettings({ open, onClose, settings, onSave }: PageSettingsPr
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="lineHeight">Line Height</Label>
+              <div className="space-y-3">
+                <Label htmlFor="lineHeight" className="text-base">
+                  Line Height
+                </Label>
                 <Input
                   id="lineHeight"
                   min={1}
@@ -201,8 +216,9 @@ export function PageSettings({ open, onClose, settings, onSave }: PageSettingsPr
                   onChange={(e) => {
                     form.setValue('lineHeight', Number.parseFloat(e.target.value) || 1.5);
                   }}
+                  className="h-12"
                 />
-                <p className="text-muted-foreground text-xs">
+                <p className="text-muted-foreground text-sm">
                   Line height multiplier (1.0 - 2.0)
                 </p>
               </div>
@@ -210,13 +226,15 @@ export function PageSettings({ open, onClose, settings, onSave }: PageSettingsPr
           </div>
 
           {/* Autosave Section */}
-          <div>
-            <h3 className="mb-4 font-semibold text-sm">Autosave</h3>
-            <div className="space-y-4">
+          <div className="rounded-lg border bg-muted/30 p-6">
+            <h3 className="mb-6 text-lg font-semibold">Autosave</h3>
+            <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label htmlFor="autosaveEnabled">Enable Autosave</Label>
-                  <p className="text-muted-foreground text-xs">
+                <div className="space-y-1">
+                  <Label htmlFor="autosaveEnabled" className="text-base">
+                    Enable Autosave
+                  </Label>
+                  <p className="text-muted-foreground text-sm">
                     Automatically save changes at specified interval
                   </p>
                 </div>
@@ -230,8 +248,10 @@ export function PageSettings({ open, onClose, settings, onSave }: PageSettingsPr
               </div>
 
               {watchedValues.autosaveEnabled && (
-                <div className="space-y-2">
-                  <Label htmlFor="autosaveInterval">Autosave Interval (seconds)</Label>
+                <div className="space-y-3">
+                  <Label htmlFor="autosaveInterval" className="text-base">
+                    Autosave Interval (seconds)
+                  </Label>
                   <Input
                     id="autosaveInterval"
                     min={5}
@@ -241,8 +261,9 @@ export function PageSettings({ open, onClose, settings, onSave }: PageSettingsPr
                     onChange={(e) => {
                       form.setValue('autosaveInterval', Number.parseInt(e.target.value, 10) || 30);
                     }}
+                    className="h-12"
                   />
-                  <p className="text-muted-foreground text-xs">
+                  <p className="text-muted-foreground text-sm">
                     Save changes every {watchedValues.autosaveInterval || 30} seconds
                   </p>
                 </div>
@@ -250,11 +271,19 @@ export function PageSettings({ open, onClose, settings, onSave }: PageSettingsPr
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 pt-4">
-            <Button onClick={onClose} type="button" variant="outline">
+          <div className="flex justify-end gap-4 border-t pt-6">
+            <Button
+              onClick={onClose}
+              type="button"
+              variant="outline"
+              size="lg"
+              className="min-w-24"
+            >
               Cancel
             </Button>
-            <Button type="submit">Save Settings</Button>
+            <Button type="submit" size="lg" className="min-w-32">
+              Save Settings
+            </Button>
           </div>
         </form>
       </DialogContent>

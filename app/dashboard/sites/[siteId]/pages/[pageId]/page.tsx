@@ -1,15 +1,12 @@
 'use client';
 
-import { ArrowLeft, Settings as SettingsIcon } from 'lucide-react';
-import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { usePages } from '@/hooks/use-pages';
 import { useUpdatePage } from '@/hooks/use-pages';
-import { BlockEditor } from '@/components/dashboard/block-editor';
+import { ModernBlockEditor } from '@/components/dashboard/modern-block-editor';
 import { PageSettings } from '@/components/dashboard/page-settings';
 import type { PageSettings as PageSettingsType } from '@/components/dashboard/page-settings';
-import { Button } from '@/components/ui/button';
 
 interface PageEditorPageProps {
   params: Promise<{ siteId: string; pageId: string }>;
@@ -83,9 +80,6 @@ export default function PageEditorPage({ params }: PageEditorPageProps) {
       <div className="flex h-screen items-center justify-center">
         <div className="text-center">
           <h2 className="mb-2 font-semibold text-xl">Page not found</h2>
-          <Link href={`/dashboard/sites/${siteId}`}>
-            <Button variant="outline">Go back</Button>
-          </Link>
         </div>
       </div>
     );
@@ -93,50 +87,16 @@ export default function PageEditorPage({ params }: PageEditorPageProps) {
 
   return (
     <div className="fixed inset-0 flex h-screen flex-col overflow-hidden bg-background">
-      <div className="flex h-12 items-center justify-between border-border border-b bg-card px-4">
-        <div className="flex items-center gap-3">
-          <Link href={`/dashboard/sites/${siteId}`}>
-            <Button size="icon" variant="ghost">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          </Link>
-          <div>
-            <h1 className="font-semibold text-base">{page.name}</h1>
-            <p className="text-muted-foreground text-xs">Page Editor</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            onClick={() => setShowPageSettings(true)}
-            size="sm"
-            variant="outline"
-          >
-            <SettingsIcon className="mr-2 h-4 w-4" />
-            Page Settings
-          </Button>
-          <Link href={`/preview/${siteId}/${pageId}`} target="_blank">
-            <Button size="sm" variant="outline">
-              Preview
-            </Button>
-          </Link>
-          <Button
-            disabled={isPublishing}
-            onClick={handlePublish}
-            size="sm"
-            variant={page.is_active ? 'outline' : 'default'}
-          >
-            {isPublishing
-              ? 'Publishing...'
-              : page.is_active
-                ? 'Unpublish'
-                : 'Publish'}
-          </Button>
-        </div>
-      </div>
-
-      <div className="flex flex-1 overflow-hidden">
-        <BlockEditor pageId={pageId} siteId={siteId} />
-      </div>
+      <ModernBlockEditor
+        pageId={pageId}
+        siteId={siteId}
+        pageName={page.name}
+        pageUrl={`https://${siteId}.example.com`}
+        isPublished={page.is_active || false}
+        isPublishing={isPublishing}
+        onPublish={handlePublish}
+        onPageSettings={() => setShowPageSettings(true)}
+      />
 
       <PageSettings
         onClose={() => setShowPageSettings(false)}
