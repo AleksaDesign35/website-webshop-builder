@@ -31,6 +31,7 @@ export default function SiteDetailPage({ params }: SiteDetailPageProps) {
     try {
       await createPage.mutateAsync({
         siteId,
+        site_id: siteId,
         name: data.name,
         description: data.description || null,
         is_active: false,

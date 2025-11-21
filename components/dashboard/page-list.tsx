@@ -283,6 +283,7 @@ export function PageList({ siteId }: PageListProps) {
       // Create a new page with the same data
       const newPage = await createPage.mutateAsync({
         siteId,
+        site_id: siteId,
         name: `${page.name} (Copy)`,
         description: page.description,
         is_active: false,
@@ -305,6 +306,7 @@ export function PageList({ siteId }: PageListProps) {
           await createBlock.mutateAsync({
             siteId,
             pageId: newPage.id,
+            page_id: newPage.id,
             block_id: block.block_id,
             params: block.params,
             display_order: block.display_order,

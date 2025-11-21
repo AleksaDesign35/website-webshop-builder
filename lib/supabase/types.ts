@@ -58,6 +58,7 @@ export interface Database {
           description: string | null;
           is_active: boolean;
           display_order: number;
+          settings: Record<string, unknown> | null;
           created_at: string;
           updated_at: string;
         };
@@ -68,6 +69,7 @@ export interface Database {
           description?: string | null;
           is_active?: boolean;
           display_order?: number;
+          settings?: Record<string, unknown> | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -78,6 +80,7 @@ export interface Database {
           description?: string | null;
           is_active?: boolean;
           display_order?: number;
+          settings?: Record<string, unknown> | null;
           created_at?: string;
           updated_at?: string;
         };

@@ -2,7 +2,11 @@ import type { BlockPreviewProps } from '../types';
 import { type HeroSectionParams, schema } from './schema';
 
 export function Preview({ params }: BlockPreviewProps) {
-  const data = schema.parse(params) as HeroSectionParams;
+  // Use safeParse to handle invalid or incomplete params gracefully
+  const parseResult = schema.safeParse(params);
+  const data = parseResult.success
+    ? parseResult.data
+    : (schema.parse({}) as HeroSectionParams);
 
   return (
     <div

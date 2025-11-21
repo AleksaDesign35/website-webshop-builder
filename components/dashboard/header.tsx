@@ -17,14 +17,12 @@ export function Header() {
 
   return (
     <header className="flex h-16 items-center justify-between border-border border-b bg-card px-6">
-      {/* Logo/Naziv sajta - levo */}
       <div className="flex items-center">
         <Link className="font-bold text-primary text-xl" href="/dashboard">
           Builder
         </Link>
       </div>
 
-      {/* Search - sredina */}
       <div className="-translate-x-1/2 absolute left-1/2">
         <div className="relative w-64">
           <Search className="-translate-y-1/2 absolute top-1/2 left-2.5 h-3.5 w-3.5 text-muted-foreground" />
@@ -36,7 +34,6 @@ export function Header() {
         </div>
       </div>
 
-      {/* Actions - desno */}
       <div className="flex items-center gap-2">
         <Button size="icon" variant="ghost">
           <Bell className="h-5 w-5" />

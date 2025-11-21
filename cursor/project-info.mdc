@@ -225,6 +225,9 @@ Cursor should:
 - Use `cn()` utility for class merging
 - Follow shadcn/ui patterns
 - Use proper React 19 patterns (RSC by default)
+- **CRITICAL: After completing any task, ALWAYS run `pnpm build` to verify the build succeeds before declaring the task complete**
+- **If build fails, fix all errors (missing dependencies, type errors, etc.) before reporting completion**
+- **Never say something "works" or is "complete" without verifying the build succeeds**
 
 ## Scripts
 - `pnpm dev` - Start dev server with Turbopack and debug

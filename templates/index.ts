@@ -13,9 +13,6 @@ export const templatesRegistry: Record<
   () => Promise<TemplateDefinition>
 > = {
   'modern-business': () => import('./modern-business').then((m) => m.template),
-  'ecommerce-store': () => import('./ecommerce-store').then((m) => m.template),
-  'creative-portfolio': () =>
-    import('./creative-portfolio').then((m) => m.template),
   // Add more templates here as you create them
 };
 

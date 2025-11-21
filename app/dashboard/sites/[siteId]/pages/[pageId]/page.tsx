@@ -1,12 +1,14 @@
 'use client';
 
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Settings as SettingsIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { usePages } from '@/hooks/use-pages';
 import { useUpdatePage } from '@/hooks/use-pages';
 import { BlockEditor } from '@/components/dashboard/block-editor';
+import { PageSettings } from '@/components/dashboard/page-settings';
+import type { PageSettings as PageSettingsType } from '@/components/dashboard/page-settings';
 import { Button } from '@/components/ui/button';
 
 interface PageEditorPageProps {
@@ -17,6 +19,7 @@ export default function PageEditorPage({ params }: PageEditorPageProps) {
   const [siteId, setSiteId] = useState<string>('');
   const [pageId, setPageId] = useState<string>('');
   const [isPublishing, setIsPublishing] = useState(false);
+  const [showPageSettings, setShowPageSettings] = useState(false);
   const updatePage = useUpdatePage();
 
   useEffect(() => {
@@ -52,6 +55,25 @@ export default function PageEditorPage({ params }: PageEditorPageProps) {
     }
   };
 
+  const handleSavePageSettings = async (settings: PageSettingsType) => {
+    if (!siteId || !pageId) return;
+    
+    try {
+      await updatePage.mutateAsync({
+        siteId,
+        pageId,
+        updates: { settings },
+      });
+      toast.success('Page settings saved successfully');
+      setShowPageSettings(false);
+    } catch (error) {
+      console.error('Failed to save page settings:', error);
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to save page settings'
+      );
+    }
+  };
+
   if (!siteId || !pageId) {
     return <div className="flex h-screen items-center justify-center">Loading...</div>;
   }
@@ -84,6 +106,14 @@ export default function PageEditorPage({ params }: PageEditorPageProps) {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            onClick={() => setShowPageSettings(true)}
+            size="sm"
+            variant="outline"
+          >
+            <SettingsIcon className="mr-2 h-4 w-4" />
+            Page Settings
+          </Button>
           <Link href={`/preview/${siteId}/${pageId}`} target="_blank">
             <Button size="sm" variant="outline">
               Preview
@@ -107,6 +137,13 @@ export default function PageEditorPage({ params }: PageEditorPageProps) {
       <div className="flex flex-1 overflow-hidden">
         <BlockEditor pageId={pageId} siteId={siteId} />
       </div>
+
+      <PageSettings
+        onClose={() => setShowPageSettings(false)}
+        onSave={handleSavePageSettings}
+        open={showPageSettings}
+        settings={(page?.settings as Record<string, unknown>) || {}}
+      />
     </div>
   );
 }

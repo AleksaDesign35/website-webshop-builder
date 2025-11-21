@@ -1,9 +1,28 @@
 import { getBlock } from '@/blocks/index';
-import { getBlocks } from '@/lib/supabase/queries';
+import { getBlocks, getPageById } from '@/lib/supabase/queries';
 import { getCurrentUserId } from '@/lib/auth';
+import type { PageSettings } from '@/components/dashboard/page-settings';
 
 interface PreviewPageProps {
   params: Promise<{ siteId: string; pageId: string }>;
+}
+
+function getContainerClass(containerWidth: string, maxWidth?: number): string {
+  if (maxWidth) {
+    return 'mx-auto';
+  }
+  
+  switch (containerWidth) {
+    case 'full':
+      return 'w-full';
+    case 'narrow':
+      return 'mx-auto max-w-5xl';
+    case 'wide':
+      return 'mx-auto max-w-7xl';
+    case 'container':
+    default:
+      return 'mx-auto max-w-6xl';
+  }
 }
 
 export default async function PreviewPage({ params }: PreviewPageProps) {
@@ -13,8 +32,20 @@ export default async function PreviewPage({ params }: PreviewPageProps) {
     // Verify user has access (this will throw if not authenticated or no access)
     await getCurrentUserId();
     
-    // Fetch blocks from Supabase
+    // Fetch page and blocks from Supabase
+    const page = await getPageById(siteId, pageId);
     const dbBlocks = await getBlocks(siteId, pageId);
+    
+    // Parse page settings
+    const pageSettings: PageSettings = (page?.settings as PageSettings | undefined) || {
+      containerWidth: 'container',
+      backgroundColor: '#ffffff',
+      rootFontSize: 16,
+      fontFamily: 'system-ui',
+      lineHeight: 1.5,
+      autosaveEnabled: false,
+      autosaveInterval: 30,
+    };
     
     // Sort by display_order
     const sortedBlocks = [...dbBlocks].sort(
@@ -39,8 +70,21 @@ export default async function PreviewPage({ params }: PreviewPageProps) {
       })
     );
 
+    const containerClass = getContainerClass(
+      pageSettings.containerWidth,
+      pageSettings.maxWidth
+    );
+
     return (
-      <div className="min-h-screen bg-background">
+      <div
+        className="min-h-screen"
+        style={{
+          backgroundColor: pageSettings.backgroundColor,
+          fontSize: `${pageSettings.rootFontSize}px`,
+          fontFamily: pageSettings.fontFamily,
+          lineHeight: pageSettings.lineHeight,
+        }}
+      >
         {blockRenderers.length === 0 ? (
           <div className="flex min-h-screen items-center justify-center">
             <div className="text-center">
@@ -51,16 +95,18 @@ export default async function PreviewPage({ params }: PreviewPageProps) {
             </div>
           </div>
         ) : (
-          blockRenderers.map(
-            (item) =>
-              item && (
-                <item.Renderer
-                  blockId={item.id}
-                  key={item.id}
-                  params={item.params}
-                />
-              )
-          )
+          <div className={containerClass} style={pageSettings.maxWidth ? { maxWidth: `${pageSettings.maxWidth}px` } : undefined}>
+            {blockRenderers.map(
+              (item) =>
+                item && (
+                  <item.Renderer
+                    blockId={item.id}
+                    key={item.id}
+                    params={item.params}
+                  />
+                )
+            )}
+          </div>
         )}
       </div>
     );

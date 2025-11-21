@@ -2,7 +2,11 @@ import type { BlockRendererProps } from '../types';
 import { type HeroSectionParams, schema } from './schema';
 
 export function Renderer({ params, blockId }: BlockRendererProps) {
-  const data = schema.parse(params) as HeroSectionParams;
+  // Use safeParse to handle invalid or incomplete params gracefully
+  const parseResult = schema.safeParse(params);
+  const data = parseResult.success
+    ? parseResult.data
+    : (schema.parse({}) as HeroSectionParams);
 
   return (
     <section
@@ -23,7 +27,7 @@ export function Renderer({ params, blockId }: BlockRendererProps) {
         />
       )}
       <div
-        className="relative z-10 mx-auto max-w-4xl"
+        className="relative z-10 w-full"
         style={{
           textAlign: data.alignment,
           color: data.textColor,

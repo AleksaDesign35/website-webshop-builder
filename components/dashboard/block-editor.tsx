@@ -25,14 +25,17 @@ import {
   Maximize2,
   Minimize2,
   Plus,
+  Save,
   Settings,
   Trash2,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useBlocks, useCreateBlock, useUpdateBlock, useDeleteBlock, useReorderBlocks } from '@/hooks/use-blocks';
+import { usePages } from '@/hooks/use-pages';
 import { getBlock } from '@/blocks/index';
 import type { BlockDefinition } from '@/blocks/types';
+import type { PageSettings } from '@/components/dashboard/page-settings';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { BlockPicker } from './block-picker';
@@ -115,7 +118,7 @@ function SortableBlockItem({
         </div>
         <Button
           className="h-8 w-8 text-destructive hover:text-destructive"
-          onClick={(e) => {
+          onClick={(e: React.MouseEvent) => {
             e.stopPropagation();
             onDelete();
           }}
@@ -131,12 +134,18 @@ function SortableBlockItem({
 
 export function BlockEditor({ siteId, pageId }: BlockEditorProps) {
   const { data: dbBlocks = [], isLoading } = useBlocks(siteId, pageId);
+  const { data: pages } = usePages(siteId);
   const createBlock = useCreateBlock();
   const updateBlock = useUpdateBlock();
   const deleteBlock = useDeleteBlock();
   const reorderBlocks = useReorderBlocks();
 
   const blocks = dbBlocks.map(dbBlockToBlock);
+  const page = pages?.find((p) => p.id === pageId);
+  const pageSettings = (page?.settings as PageSettings | undefined) || {
+    autosaveEnabled: false,
+    autosaveInterval: 30,
+  };
 
   const [selectedBlock, setSelectedBlock] = useState<Block | null>(null);
   const [blockDefinition, setBlockDefinition] =
@@ -148,6 +157,14 @@ export function BlockEditor({ siteId, pageId }: BlockEditorProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [settingsCollapsed, setSettingsCollapsed] = useState(false);
   const [compactMode, setCompactMode] = useState(false);
+  const [previousSidebarState, setPreviousSidebarState] = useState({ sidebar: false, settings: false });
+  
+  // Local state for real-time preview updates (not saved to DB until Save is clicked)
+  const [localBlocks, setLocalBlocks] = useState<Block[]>(blocks);
+  const [pendingChanges, setPendingChanges] = useState<Map<string, Record<string, unknown>>>(new Map());
+  const [isSaving, setIsSaving] = useState(false);
+  const blocksRef = useRef<string>('');
+  const autosaveIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -199,12 +216,19 @@ export function BlockEditor({ siteId, pageId }: BlockEditorProps) {
 
   const handleAddBlock = async (blockId: string) => {
     try {
+      // Get block definition to extract default params from schema
+      const definition = await getBlock(blockId as any);
+      const defaultParams = definition.schema
+        ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          ((definition.schema as any).parse({}) as Record<string, unknown>)
+        : ({} as Record<string, unknown>);
+
       const newDbBlock = await createBlock.mutateAsync({
         siteId,
         pageId,
         page_id: pageId,
         block_id: blockId,
-        params: {} as Record<string, unknown>,
+        params: defaultParams,
         display_order: blocks.length,
       });
       const newBlock = dbBlockToBlock(newDbBlock);
@@ -237,42 +261,140 @@ export function BlockEditor({ siteId, pageId }: BlockEditorProps) {
     }
   };
 
-  const handleBlockUpdate = async (
+  // Sync local blocks with database blocks (only when blocks actually change)
+  useEffect(() => {
+    const blocksString = JSON.stringify(blocks.map(b => ({ id: b.id, blockId: b.blockId, order: b.order, params: b.params })));
+    
+    if (blocksString !== blocksRef.current) {
+      blocksRef.current = blocksString;
+      setLocalBlocks(blocks);
+    }
+  }, [blocks]);
+
+  const handleBlockUpdate = (
     blockId: string,
     params: Record<string, unknown>
   ) => {
+    // Check if params actually changed to avoid unnecessary updates
+    const currentBlock = localBlocks.find((b) => b.id === blockId);
+    if (currentBlock && JSON.stringify(currentBlock.params) === JSON.stringify(params)) {
+      return; // No change, skip update
+    }
+
+    // Update local state for immediate preview feedback (not saved to DB yet)
+    setLocalBlocks((prev) =>
+      prev.map((block) =>
+        block.id === blockId ? { ...block, params } : block
+      )
+    );
+    
+    // Store pending changes
+    setPendingChanges((prev) => {
+      const newMap = new Map(prev);
+      newMap.set(blockId, params);
+      return newMap;
+    });
+    
+    // Don't update selectedBlock.params here - it will cause infinite loop
+    // The Editor component will use localBlocks for params
+  };
+
+  const handleSave = async () => {
+    if (pendingChanges.size === 0) {
+      return; // No changes to save, don't show toast
+    }
+
+    setIsSaving(true);
     try {
-      await updateBlock.mutateAsync({
-        siteId,
-        pageId,
-        blockId,
-        updates: { params },
-      });
-      // Update local state for immediate UI feedback
-      if (selectedBlock?.id === blockId) {
-        setSelectedBlock({ ...selectedBlock, params });
-      }
-      // Don't show toast for every update to avoid spam
-    } catch (error) {
-      console.error('Failed to update block:', error);
-      toast.error(
-        error instanceof Error ? error.message : 'Failed to update block'
+      // Save all pending changes
+      const savePromises = Array.from(pendingChanges.entries()).map(
+        async ([blockId, params]) => {
+          await updateBlock.mutateAsync({
+            siteId,
+            pageId,
+            blockId,
+            updates: { params },
+          });
+        }
       );
+
+      await Promise.all(savePromises);
+      const savedCount = pendingChanges.size;
+      setPendingChanges(new Map());
+      toast.success(`Saved ${savedCount} block${savedCount > 1 ? 's' : ''}`);
+    } catch (error) {
+      console.error('Failed to save blocks:', error);
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to save blocks'
+      );
+    } finally {
+      setIsSaving(false);
     }
   };
+
+  // Setup autosave interval if enabled
+  useEffect(() => {
+    // Clear existing interval
+    if (autosaveIntervalRef.current) {
+      clearInterval(autosaveIntervalRef.current);
+      autosaveIntervalRef.current = null;
+    }
+
+    // Setup new interval if autosave is enabled
+    if (pageSettings.autosaveEnabled && pageSettings.autosaveInterval) {
+      autosaveIntervalRef.current = setInterval(async () => {
+        // Check if there are pending changes and not currently saving
+        if (pendingChanges.size > 0 && !isSaving) {
+          setIsSaving(true);
+          try {
+            // Save all pending changes
+            const savePromises = Array.from(pendingChanges.entries()).map(
+              async ([blockId, params]) => {
+                await updateBlock.mutateAsync({
+                  siteId,
+                  pageId,
+                  blockId,
+                  updates: { params },
+                });
+              }
+            );
+
+            await Promise.all(savePromises);
+            setPendingChanges(new Map());
+            // Don't show toast for autosave to avoid spam
+          } catch (error) {
+            console.error('Autosave failed:', error);
+            // Don't show error toast for autosave failures
+          } finally {
+            setIsSaving(false);
+          }
+        }
+      }, pageSettings.autosaveInterval * 1000); // Convert seconds to milliseconds
+    }
+
+    // Cleanup on unmount or when settings change
+    return () => {
+      if (autosaveIntervalRef.current) {
+        clearInterval(autosaveIntervalRef.current);
+        autosaveIntervalRef.current = null;
+      }
+    };
+  }, [pageSettings.autosaveEnabled, pageSettings.autosaveInterval, siteId, pageId, updateBlock, pendingChanges.size, isSaving]);
 
   // Load block definitions for preview
   useEffect(() => {
     const loadDefinitions = async () => {
       const definitions = new Map<string, BlockDefinition>();
-      for (const block of blocks) {
-        if (!blockDefinitions.has(block.blockId)) {
+      const blockIds = new Set(localBlocks.map(b => b.blockId));
+      
+      for (const blockId of blockIds) {
+        if (!blockDefinitions.has(blockId)) {
           try {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const definition = await getBlock(block.blockId as any);
-            definitions.set(block.blockId, definition);
+            const definition = await getBlock(blockId as any);
+            definitions.set(blockId, definition);
           } catch (error) {
-            console.error(`Failed to load block ${block.blockId}:`, error);
+            console.error(`Failed to load block ${blockId}:`, error);
           }
         }
       }
@@ -282,17 +404,17 @@ export function BlockEditor({ siteId, pageId }: BlockEditorProps) {
     };
     loadDefinitions();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [blocks]);
+  }, [localBlocks.length]);
 
-  const sortedBlocks = [...blocks].sort((a, b) => a.order - b.order);
+  const sortedBlocks = [...localBlocks].sort((a, b) => a.order - b.order);
 
   return (
     <div className="flex flex-1 overflow-hidden">
       {/* Left: Block List */}
       <div
         className={`flex flex-col border-border border-r bg-card transition-all ${
-          sidebarCollapsed ? 'w-16' : 'w-80'
-        }`}
+          compactMode ? 'w-0 border-0' : sidebarCollapsed ? 'w-16' : 'w-80'
+        } ${compactMode ? 'overflow-hidden' : ''}`}
       >
         <div className="flex h-16 items-center justify-between border-border border-b px-4">
           {!sidebarCollapsed && <h2 className="font-semibold">Blocks</h2>}
@@ -312,17 +434,19 @@ export function BlockEditor({ siteId, pageId }: BlockEditorProps) {
                 <Plus className="h-4 w-4" />
               </Button>
             )}
-            <Button
-              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              size="icon"
-              variant="ghost"
-            >
-              {sidebarCollapsed ? (
-                <ChevronRight className="h-4 w-4" />
-              ) : (
-                <ChevronLeft className="h-4 w-4" />
-              )}
-            </Button>
+            {!compactMode && (
+              <Button
+                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                size="icon"
+                variant="ghost"
+              >
+                {sidebarCollapsed ? (
+                  <ChevronRight className="h-4 w-4" />
+                ) : (
+                  <ChevronLeft className="h-4 w-4" />
+                )}
+              </Button>
+            )}
           </div>
         </div>
         <div className="flex-1 overflow-y-auto p-4">
@@ -388,10 +512,20 @@ export function BlockEditor({ siteId, pageId }: BlockEditorProps) {
           <h2 className="font-semibold">Preview</h2>
           <Button
             onClick={() => {
-              setCompactMode(!compactMode);
               if (!compactMode) {
+                // Entering focus mode - save current state and hide sidebars
+                setPreviousSidebarState({
+                  sidebar: sidebarCollapsed,
+                  settings: settingsCollapsed,
+                });
                 setSidebarCollapsed(true);
                 setSettingsCollapsed(true);
+                setCompactMode(true);
+              } else {
+                // Exiting focus mode - restore previous state
+                setSidebarCollapsed(previousSidebarState.sidebar);
+                setSettingsCollapsed(previousSidebarState.settings);
+                setCompactMode(false);
               }
             }}
             size="sm"
@@ -463,35 +597,48 @@ export function BlockEditor({ siteId, pageId }: BlockEditorProps) {
       {/* Right: Block Settings */}
       <div
         className={`flex flex-col border-border border-l bg-card transition-all ${
-          settingsCollapsed ? 'w-16' : 'w-96'
-        }`}
+          compactMode ? 'w-0 border-0' : settingsCollapsed ? 'w-16' : 'w-96'
+        } ${compactMode ? 'overflow-hidden' : ''}`}
       >
         <div className="flex h-16 items-center justify-between border-border border-b px-4">
           {!settingsCollapsed && <h2 className="font-semibold">Settings</h2>}
           <div className="flex items-center gap-2">
             {selectedBlock && !settingsCollapsed && (
+              <>
+                <Button
+                  disabled={isSaving || pendingChanges.size === 0}
+                  onClick={handleSave}
+                  size="sm"
+                  variant="default"
+                >
+                  <Save className="mr-2 h-4 w-4" />
+                  {isSaving ? 'Saving...' : pendingChanges.size > 0 ? `Save (${pendingChanges.size})` : 'Save'}
+                </Button>
+                <Button
+                  onClick={() => {
+                    setSelectedBlock(null);
+                    setBlockDefinition(null);
+                  }}
+                  size="sm"
+                  variant="ghost"
+                >
+                  Close
+                </Button>
+              </>
+            )}
+            {!compactMode && (
               <Button
-                onClick={() => {
-                  setSelectedBlock(null);
-                  setBlockDefinition(null);
-                }}
-                size="sm"
+                onClick={() => setSettingsCollapsed(!settingsCollapsed)}
+                size="icon"
                 variant="ghost"
               >
-                Close
+                {settingsCollapsed ? (
+                  <ChevronLeft className="h-4 w-4" />
+                ) : (
+                  <ChevronRight className="h-4 w-4" />
+                )}
               </Button>
             )}
-            <Button
-              onClick={() => setSettingsCollapsed(!settingsCollapsed)}
-              size="icon"
-              variant="ghost"
-            >
-              {settingsCollapsed ? (
-                <ChevronLeft className="h-4 w-4" />
-              ) : (
-                <ChevronRight className="h-4 w-4" />
-              )}
-            </Button>
           </div>
         </div>
         <div className="flex-1 overflow-y-auto p-4">
@@ -511,8 +658,9 @@ export function BlockEditor({ siteId, pageId }: BlockEditorProps) {
             </div>
           ) : selectedBlock && blockDefinition ? (
             <blockDefinition.Editor
+              key={selectedBlock.id}
               onChange={(params) => handleBlockUpdate(selectedBlock.id, params)}
-              params={selectedBlock.params}
+              params={localBlocks.find(b => b.id === selectedBlock.id)?.params || selectedBlock.params}
             />
           ) : (
             <div className="py-12 text-center">
