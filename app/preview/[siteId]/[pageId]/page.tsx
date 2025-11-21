@@ -5,6 +5,9 @@ import type { PageSettings } from '@/components/dashboard/page-settings';
 import { optimizeInlineStyles } from '@/lib/block-styles';
 import { BlockWrapper } from '@/components/block-wrapper';
 
+// Optimize for performance - minimize React hydration
+export const dynamic = 'force-dynamic';
+
 interface PreviewPageProps {
   params: Promise<{ siteId: string; pageId: string }>;
 }
@@ -89,13 +92,14 @@ export default async function PreviewPage({ params }: PreviewPageProps) {
       ? optimizeInlineStyles({ maxWidth: pageSettings.maxWidth })
       : undefined;
 
+    // Render with suppressHydrationWarning to minimize React hydration overhead
     return (
-      <div className="min-h-screen" style={pageStyles}>
+      <div className="min-h-screen" style={pageStyles} suppressHydrationWarning>
         {blockRenderers.length === 0 ? (
-          <div className="flex min-h-screen items-center justify-center">
-            <div className="text-center">
-              <h2 className="mb-2 font-semibold text-xl">No blocks yet</h2>
-              <p className="text-muted-foreground">
+          <div className="flex min-h-screen items-center justify-center" suppressHydrationWarning>
+            <div className="text-center" suppressHydrationWarning>
+              <h2 className="mb-2 font-semibold text-xl" suppressHydrationWarning>No blocks yet</h2>
+              <p className="text-muted-foreground" suppressHydrationWarning>
                 Add blocks to this page to see the preview
               </p>
             </div>

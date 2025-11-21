@@ -6,63 +6,51 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { BlockEditorProps } from '../types';
-import { type HeroSectionParams, schema } from './schema';
+import { type Hero1Params, schema } from './schema';
 
 export function Editor({ params, onChange }: BlockEditorProps) {
-  // Parse and validate params with defaults
   const parseResult = schema.safeParse(params);
   const defaultValues = parseResult.success
     ? parseResult.data
-    : schema.parse({});
+    : (schema.parse({}) as Hero1Params);
 
-  const form = useForm<HeroSectionParams>({
-    defaultValues: defaultValues as HeroSectionParams,
+  const form = useForm<Hero1Params>({
+    defaultValues,
     mode: 'onChange',
   });
 
-  // Watch all form values for real-time updates
   const watchedValues = form.watch();
   const previousValuesRef = useRef<string>('');
   const onChangeRef = useRef(onChange);
   const paramsRef = useRef(params);
   const isInternalUpdateRef = useRef(false);
-  
-  // Keep onChange ref up to date
+
   useEffect(() => {
     onChangeRef.current = onChange;
   }, [onChange]);
 
-  // Sync form when params prop changes (from external updates, not from our onChange)
   useEffect(() => {
-    // Skip if this is an internal update (from our onChange)
     if (isInternalUpdateRef.current) {
       isInternalUpdateRef.current = false;
       return;
     }
 
-    // Check if params actually changed
     const paramsString = JSON.stringify(params);
     const currentParamsString = JSON.stringify(paramsRef.current);
-    
+
     if (paramsString === currentParamsString) {
-      return; // No change
+      return;
     }
-    
+
     paramsRef.current = params;
-    
+
     try {
       const validated = schema.parse(params);
       const currentValues = form.getValues();
       const currentString = JSON.stringify(currentValues);
-      
-      // Only update form if params are different from current form values
+
       if (paramsString !== currentString) {
         form.reset(validated);
         previousValuesRef.current = paramsString;
@@ -72,18 +60,15 @@ export function Editor({ params, onChange }: BlockEditorProps) {
     }
   }, [params, form]);
 
-  // Update parent component on any change (for real-time preview, not saved to DB)
   useEffect(() => {
     try {
       const validated = schema.parse(watchedValues);
       const validatedString = JSON.stringify(validated);
-      
-      // Skip if values haven't changed
+
       if (previousValuesRef.current === validatedString) {
         return;
       }
 
-      // Skip if the change came from params prop (to avoid loop)
       const paramsString = JSON.stringify(paramsRef.current);
       if (validatedString === paramsString) {
         previousValuesRef.current = validatedString;
@@ -91,9 +76,7 @@ export function Editor({ params, onChange }: BlockEditorProps) {
       }
 
       previousValuesRef.current = validatedString;
-      // Mark that we're making an internal update
       isInternalUpdateRef.current = true;
-      // Call onChange immediately for real-time preview (not saved to DB)
       onChangeRef.current(validated);
     } catch {
       // Invalid form data, skip
@@ -110,29 +93,13 @@ export function Editor({ params, onChange }: BlockEditorProps) {
       <TabsContent className="mt-4 space-y-6" value="content">
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="headline">Headline</Label>
-            <Input
-              id="headline"
-              {...form.register('headline')}
-              onChange={(e) => {
-                form.setValue('headline', e.target.value);
-              }}
-              placeholder="Welcome"
-            />
-            <p className="text-muted-foreground text-xs">
-              Small text above the title (optional)
-            </p>
-          </div>
-
-          <div className="space-y-2">
             <Label htmlFor="title">Title</Label>
-            <Input
+            <Textarea
               id="title"
               {...form.register('title')}
-              onChange={(e) => {
-                form.setValue('title', e.target.value);
-              }}
-              placeholder="Build Amazing Websites"
+              onChange={(e) => form.setValue('title', e.target.value)}
+              placeholder="Build Your Online Platform..."
+              rows={3}
             />
           </div>
 
@@ -141,67 +108,97 @@ export function Editor({ params, onChange }: BlockEditorProps) {
             <Textarea
               id="description"
               {...form.register('description')}
-              onChange={(e) => {
-                form.setValue('description', e.target.value);
-              }}
-              placeholder="Create beautiful websites..."
+              onChange={(e) => form.setValue('description', e.target.value)}
               rows={3}
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="ctaText">Button Text</Label>
-            <Input
-              id="ctaText"
-              {...form.register('ctaText')}
-              onChange={(e) => {
-                form.setValue('ctaText', e.target.value);
-              }}
-              placeholder="Get Started"
-            />
-            <p className="text-muted-foreground text-xs">
-              Leave empty to hide the button
-            </p>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="ctaText">Primary Button Text</Label>
+              <Input
+                id="ctaText"
+                {...form.register('ctaText')}
+                onChange={(e) => form.setValue('ctaText', e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="ctaLink">Primary Button Link</Label>
+              <Input
+                id="ctaLink"
+                {...form.register('ctaLink')}
+                onChange={(e) => form.setValue('ctaLink', e.target.value)}
+                type="url"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="ctaText2">Secondary Button Text</Label>
+              <Input
+                id="ctaText2"
+                {...form.register('ctaText2')}
+                onChange={(e) => form.setValue('ctaText2', e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="ctaLink2">Secondary Button Link</Label>
+              <Input
+                id="ctaLink2"
+                {...form.register('ctaLink2')}
+                onChange={(e) => form.setValue('ctaLink2', e.target.value)}
+                type="url"
+              />
+            </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="ctaLink">Button Link</Label>
+            <Label htmlFor="image">Image URL</Label>
             <Input
-              id="ctaLink"
-              {...form.register('ctaLink')}
-              onChange={(e) => {
-                form.setValue('ctaLink', e.target.value);
-              }}
-              placeholder="https://example.com"
+              id="image"
+              {...form.register('image')}
+              onChange={(e) => form.setValue('image', e.target.value)}
               type="url"
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="backgroundImage">Background Image URL</Label>
-            <Input
-              id="backgroundImage"
-              {...form.register('backgroundImage')}
-              onChange={(e) => {
-                form.setValue('backgroundImage', e.target.value);
-              }}
-              placeholder="https://images.unsplash.com/..."
-            />
-            <p className="text-muted-foreground text-xs">
-              Leave empty to use default image
-            </p>
+          <div className="space-y-4 border-t pt-4">
+            <h3 className="font-semibold text-sm">Stats Box</h3>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="statsEmployees">Employees</Label>
+                <Input
+                  id="statsEmployees"
+                  {...form.register('statsEmployees')}
+                  onChange={(e) => form.setValue('statsEmployees', e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="statsRating">Rating</Label>
+                <Input
+                  id="statsRating"
+                  {...form.register('statsRating')}
+                  onChange={(e) => form.setValue('statsRating', e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="statsReviews">Reviews</Label>
+                <Input
+                  id="statsReviews"
+                  {...form.register('statsReviews')}
+                  onChange={(e) => form.setValue('statsReviews', e.target.value)}
+                />
+              </div>
+            </div>
           </div>
         </div>
       </TabsContent>
 
       <TabsContent className="mt-4 space-y-6" value="spacing">
         <div className="space-y-6">
-          {/* Margin - for spacing between blocks */}
           <div>
             <h3 className="mb-4 font-semibold text-sm">Block Spacing</h3>
-            <p className="mb-4 text-muted-foreground text-xs">
-              Add space above and below this block to create gaps between blocks
-            </p>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="marginTop">Top Margin (px)</Label>
@@ -230,14 +227,10 @@ export function Editor({ params, onChange }: BlockEditorProps) {
             </div>
           </div>
 
-          {/* Padding - optional internal spacing */}
           <div>
             <div className="mb-4 flex items-center justify-between">
               <div>
                 <h3 className="font-semibold text-sm">Internal Padding</h3>
-                <p className="text-muted-foreground text-xs">
-                  Add padding inside the block (optional)
-                </p>
               </div>
               <Switch
                 checked={watchedValues.enablePadding || false}
@@ -254,7 +247,7 @@ export function Editor({ params, onChange }: BlockEditorProps) {
                     id="paddingTop"
                     type="number"
                     min="0"
-                    value={watchedValues.paddingTop || 80}
+                    value={watchedValues.paddingTop || 100}
                     onChange={(e) => {
                       form.setValue('paddingTop', Number.parseInt(e.target.value, 10) || 0);
                     }}
@@ -266,7 +259,7 @@ export function Editor({ params, onChange }: BlockEditorProps) {
                     id="paddingBottom"
                     type="number"
                     min="0"
-                    value={watchedValues.paddingBottom || 80}
+                    value={watchedValues.paddingBottom || 100}
                     onChange={(e) => {
                       form.setValue('paddingBottom', Number.parseInt(e.target.value, 10) || 0);
                     }}
@@ -280,3 +273,5 @@ export function Editor({ params, onChange }: BlockEditorProps) {
     </Tabs>
   );
 }
+
+

@@ -27,6 +27,8 @@ export interface BlockDefinition {
   popular?: boolean;
   /** Layout mode - how the block should be rendered */
   layoutMode?: BlockLayoutMode;
+  /** Preview image URL for block picker */
+  previewImage?: string;
   /** Zod schema for validation */
   schema: unknown; // Will be typed as z.ZodObject in actual blocks
   /** Editor component (dashboard settings) */
