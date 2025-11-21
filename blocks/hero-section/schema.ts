@@ -3,20 +3,11 @@ import { z } from 'zod';
 /**
  * Hero Section Block Schema
  *
- * Defines all editable parameters for the Hero Section block.
- * All fields are optional with sensible defaults.
+ * Simplified schema - user can only edit content and spacing.
+ * All styling is handled automatically for responsive, clean design.
  */
 export const schema = z
   .object({
-    // Background
-    backgroundImage: z
-      .string()
-      .default(
-        'https://images.unsplash.com/photo-1557683316-973673baf926?w=1900&h=700&fit=crop'
-      )
-      .optional(),
-    backgroundColor: z.string().default('#000000'),
-
     // Text content
     headline: z.string().optional().default('Welcome'),
     title: z.string().optional().default('Build Amazing Websites'),
@@ -29,22 +20,22 @@ export const schema = z
     ctaText: z.string().optional().default('Get Started'),
     ctaLink: z.string().default('#').optional(),
 
-    // Styling
-    textColor: z.string().default('#ffffff'),
-    alignment: z.enum(['left', 'center', 'right']).default('center'),
-    padding: z
-      .object({
-        top: z.number().default(80),
-        bottom: z.number().default(80),
-        left: z.number().default(20),
-        right: z.number().default(20),
-      })
-      .default({
-        top: 80,
-        bottom: 80,
-        left: 20,
-        right: 20,
-      }),
+    // Background
+    backgroundImage: z
+      .string()
+      .optional()
+      .default(
+        'https://images.unsplash.com/photo-1557683316-973673baf926?w=1900&h=700&fit=crop'
+      ),
+
+    // Spacing - margin for gaps between blocks
+    marginTop: z.number().default(0),
+    marginBottom: z.number().default(0),
+
+    // Padding - optional internal spacing
+    enablePadding: z.boolean().default(false),
+    paddingTop: z.number().default(80),
+    paddingBottom: z.number().default(80),
   })
   .refine(
     (data) => {

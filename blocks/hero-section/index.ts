@@ -12,6 +12,7 @@ export const block: BlockDefinition = {
   description: 'Large banner with headline and CTA',
   icon: Layout,
   popular: true,
+  layoutMode: 'full-width', // Hero sections are always full-width
   schema,
   Editor,
   Preview,

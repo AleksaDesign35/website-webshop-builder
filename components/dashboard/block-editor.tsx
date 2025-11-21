@@ -39,6 +39,8 @@ import type { PageSettings } from '@/components/dashboard/page-settings';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { BlockPicker } from './block-picker';
+import { BlockWrapper } from '@/components/block-wrapper';
+import { ClickableBlockWrapper } from './clickable-block-wrapper';
 import type { Database } from '@/lib/supabase/types';
 
 type DbBlock = Database['public']['Tables']['blocks']['Row'];
@@ -142,7 +144,12 @@ export function BlockEditor({ siteId, pageId }: BlockEditorProps) {
 
   const blocks = dbBlocks.map(dbBlockToBlock);
   const page = pages?.find((p) => p.id === pageId);
-  const pageSettings = (page?.settings as PageSettings | undefined) || {
+  const pageSettings: PageSettings = (page?.settings as PageSettings | undefined) || {
+    containerWidth: 'container',
+    backgroundColor: '#ffffff',
+    rootFontSize: 16,
+    fontFamily: 'system-ui',
+    lineHeight: 1.5,
     autosaveEnabled: false,
     autosaveInterval: 30,
   };
@@ -197,6 +204,10 @@ export function BlockEditor({ siteId, pageId }: BlockEditorProps) {
 
   const handleBlockClick = async (block: Block) => {
     setSelectedBlock(block);
+    // Open settings panel if collapsed
+    if (settingsCollapsed) {
+      setSettingsCollapsed(false);
+    }
     // Check if we already have the definition cached
     if (blockDefinitions.has(block.blockId)) {
       setBlockDefinition(blockDefinitions.get(block.blockId)!);
@@ -544,7 +555,7 @@ export function BlockEditor({ siteId, pageId }: BlockEditorProps) {
             )}
           </Button>
         </div>
-        <div className="flex-1 overflow-y-auto p-8">
+        <div className="flex-1 overflow-y-auto">
           {isLoading ? (
             <div className="flex h-full items-center justify-center">
               <p className="text-muted-foreground">Loading blocks...</p>
@@ -564,13 +575,23 @@ export function BlockEditor({ siteId, pageId }: BlockEditorProps) {
               </div>
             </div>
           ) : (
-            <div className="mx-auto max-w-4xl space-y-8">
+            <div 
+              className="min-h-screen"
+              style={{
+                backgroundColor: pageSettings.backgroundColor,
+                fontSize: `${pageSettings.rootFontSize}px`,
+                fontFamily: pageSettings.fontFamily,
+                lineHeight: pageSettings.lineHeight,
+                paddingLeft: '20px',
+                paddingRight: '20px',
+              }}
+            >
               {sortedBlocks.map((block) => {
                 const definition = blockDefinitions.get(block.blockId);
                 if (!definition) {
                   return (
                     <div
-                      className="rounded-lg border border-border bg-card p-8"
+                      className="flex items-center justify-center p-8"
                       key={block.id}
                     >
                       <p className="text-muted-foreground">
@@ -579,14 +600,28 @@ export function BlockEditor({ siteId, pageId }: BlockEditorProps) {
                     </div>
                   );
                 }
-                const Preview = definition.Preview;
+                // Use Renderer instead of Preview to match preview page exactly
+                // Use params from pendingChanges if available, otherwise use block.params
+                const blockParams = pendingChanges.get(block.id) || block.params;
+                const Renderer = definition.Renderer;
+                const isSelected = selectedBlock?.id === block.id;
+                
                 return (
-                  <div
-                    className="rounded-lg border border-border bg-card"
+                  <ClickableBlockWrapper
                     key={block.id}
+                    blockId={block.id}
+                    isSelected={isSelected}
+                    onClick={() => handleBlockClick(block)}
                   >
-                    <Preview isEditing params={block.params} />
-                  </div>
+                    <BlockWrapper
+                      block={definition}
+                      blockId={block.id}
+                      params={blockParams}
+                      pageSettings={pageSettings}
+                    >
+                      <Renderer blockId={block.id} params={blockParams} />
+                    </BlockWrapper>
+                  </ClickableBlockWrapper>
                 );
               })}
             </div>

@@ -22,7 +22,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       {children}
-      <Toaster position="top-right" />
+      <Toaster position="top-right" duration={5000} />
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   );

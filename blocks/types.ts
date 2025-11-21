@@ -2,6 +2,14 @@ import type { LucideIcon } from 'lucide-react';
 import type { ComponentType } from 'react';
 
 /**
+ * Layout mode for blocks
+ * - 'full-width': Block spans full viewport width (e.g., hero sections)
+ * - 'container': Block uses page container settings
+ * - 'inherit': Uses page default container settings
+ */
+export type BlockLayoutMode = 'full-width' | 'container' | 'inherit';
+
+/**
  * Base block definition interface
  */
 export interface BlockDefinition {
@@ -17,6 +25,8 @@ export interface BlockDefinition {
   icon: LucideIcon;
   /** Whether this is a popular block */
   popular?: boolean;
+  /** Layout mode - how the block should be rendered */
+  layoutMode?: BlockLayoutMode;
   /** Zod schema for validation */
   schema: unknown; // Will be typed as z.ZodObject in actual blocks
   /** Editor component (dashboard settings) */
@@ -55,4 +65,8 @@ export interface BlockRendererProps {
   params: Record<string, unknown>;
   /** Block ID (for tracking) */
   blockId?: string;
+  /** Container class for blocks that need it (passed from BlockWrapper) */
+  containerClass?: string;
+  /** Container styles for blocks that need it */
+  containerStyles?: React.CSSProperties;
 }

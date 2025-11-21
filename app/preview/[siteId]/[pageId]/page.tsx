@@ -2,6 +2,8 @@ import { getBlock } from '@/blocks/index';
 import { getBlocks, getPageById } from '@/lib/supabase/queries';
 import { getCurrentUserId } from '@/lib/auth';
 import type { PageSettings } from '@/components/dashboard/page-settings';
+import { optimizeInlineStyles } from '@/lib/block-styles';
+import { BlockWrapper } from '@/components/block-wrapper';
 
 interface PreviewPageProps {
   params: Promise<{ siteId: string; pageId: string }>;
@@ -60,7 +62,7 @@ export default async function PreviewPage({ params }: PreviewPageProps) {
           const definition = await getBlock(block.block_id as any);
           return {
             id: block.id,
-            Renderer: definition.Renderer,
+            definition,
             params: (block.params as Record<string, unknown>) || {},
           };
         } catch (error) {
@@ -75,16 +77,20 @@ export default async function PreviewPage({ params }: PreviewPageProps) {
       pageSettings.maxWidth
     );
 
+    // Optimize inline styles for clean HTML output
+    const pageStyles = optimizeInlineStyles({
+      backgroundColor: pageSettings.backgroundColor,
+      fontSize: pageSettings.rootFontSize,
+      fontFamily: pageSettings.fontFamily,
+      lineHeight: pageSettings.lineHeight,
+    });
+
+    const containerStyles = pageSettings.maxWidth
+      ? optimizeInlineStyles({ maxWidth: pageSettings.maxWidth })
+      : undefined;
+
     return (
-      <div
-        className="min-h-screen"
-        style={{
-          backgroundColor: pageSettings.backgroundColor,
-          fontSize: `${pageSettings.rootFontSize}px`,
-          fontFamily: pageSettings.fontFamily,
-          lineHeight: pageSettings.lineHeight,
-        }}
-      >
+      <div className="min-h-screen" style={pageStyles}>
         {blockRenderers.length === 0 ? (
           <div className="flex min-h-screen items-center justify-center">
             <div className="text-center">
@@ -95,18 +101,25 @@ export default async function PreviewPage({ params }: PreviewPageProps) {
             </div>
           </div>
         ) : (
-          <div className={containerClass} style={pageSettings.maxWidth ? { maxWidth: `${pageSettings.maxWidth}px` } : undefined}>
+          <>
             {blockRenderers.map(
               (item) =>
                 item && (
-                  <item.Renderer
-                    blockId={item.id}
+                  <BlockWrapper
                     key={item.id}
+                    block={item.definition}
+                    blockId={item.id}
                     params={item.params}
-                  />
+                    pageSettings={pageSettings}
+                  >
+                    <item.definition.Renderer
+                      blockId={item.id}
+                      params={item.params}
+                    />
+                  </BlockWrapper>
                 )
             )}
-          </div>
+          </>
         )}
       </div>
     );

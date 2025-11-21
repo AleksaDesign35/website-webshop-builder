@@ -5,13 +5,7 @@ import { useForm } from 'react-hook-form';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import {
   Tabs,
   TabsContent,
@@ -108,10 +102,9 @@ export function Editor({ params, onChange }: BlockEditorProps) {
 
   return (
     <Tabs className="w-full" defaultValue="content">
-      <TabsList className="grid w-full grid-cols-3">
+      <TabsList className="grid w-full grid-cols-2">
         <TabsTrigger value="content">Content</TabsTrigger>
-        <TabsTrigger value="style">Style</TabsTrigger>
-        <TabsTrigger value="advanced">Advanced</TabsTrigger>
+        <TabsTrigger value="spacing">Spacing</TabsTrigger>
       </TabsList>
 
       <TabsContent className="mt-4 space-y-6" value="content">
@@ -157,7 +150,7 @@ export function Editor({ params, onChange }: BlockEditorProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="ctaText">CTA Button Text</Label>
+            <Label htmlFor="ctaText">Button Text</Label>
             <Input
               id="ctaText"
               {...form.register('ctaText')}
@@ -172,7 +165,7 @@ export function Editor({ params, onChange }: BlockEditorProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="ctaLink">CTA Button Link</Label>
+            <Label htmlFor="ctaLink">Button Link</Label>
             <Input
               id="ctaLink"
               {...form.register('ctaLink')}
@@ -183,167 +176,104 @@ export function Editor({ params, onChange }: BlockEditorProps) {
               type="url"
             />
           </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="backgroundImage">Background Image URL</Label>
+            <Input
+              id="backgroundImage"
+              {...form.register('backgroundImage')}
+              onChange={(e) => {
+                form.setValue('backgroundImage', e.target.value);
+              }}
+              placeholder="https://images.unsplash.com/..."
+            />
+            <p className="text-muted-foreground text-xs">
+              Leave empty to use default image
+            </p>
+          </div>
         </div>
       </TabsContent>
 
-      <TabsContent className="mt-4 space-y-6" value="style">
+      <TabsContent className="mt-4 space-y-6" value="spacing">
         <div className="space-y-6">
-          {/* Background */}
+          {/* Margin - for spacing between blocks */}
           <div>
-            <h3 className="mb-4 font-semibold text-sm">Background</h3>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="backgroundImage">Background Image URL</Label>
-                <Input
-                  id="backgroundImage"
-                  {...form.register('backgroundImage')}
-                  onChange={(e) => {
-                    form.setValue('backgroundImage', e.target.value);
-                  }}
-                  placeholder="https://images.unsplash.com/..."
-                />
-                <p className="text-muted-foreground text-xs">
-                  Leave empty to use default Unsplash image
-                </p>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="backgroundColor">Background Color</Label>
-                <div className="flex gap-2">
-                  <Input
-                    id="backgroundColor"
-                    {...form.register('backgroundColor')}
-                    onChange={(e) => {
-                      form.setValue('backgroundColor', e.target.value);
-                    }}
-                    placeholder="#000000"
-                    type="color"
-                    className="h-10 w-20 cursor-pointer"
-                  />
-                  <Input
-                    {...form.register('backgroundColor')}
-                    onChange={(e) => {
-                      form.setValue('backgroundColor', e.target.value);
-                    }}
-                    placeholder="#000000"
-                    type="text"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Typography */}
-          <div>
-            <h3 className="mb-4 font-semibold text-sm">Typography</h3>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="textColor">Text Color</Label>
-                <div className="flex gap-2">
-                  <Input
-                    id="textColor"
-                    {...form.register('textColor')}
-                    onChange={(e) => {
-                      form.setValue('textColor', e.target.value);
-                    }}
-                    placeholder="#ffffff"
-                    type="color"
-                    className="h-10 w-20 cursor-pointer"
-                  />
-                  <Input
-                    {...form.register('textColor')}
-                    onChange={(e) => {
-                      form.setValue('textColor', e.target.value);
-                    }}
-                    placeholder="#ffffff"
-                    type="text"
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="alignment">Text Alignment</Label>
-                <Select
-                  value={watchedValues.alignment || 'center'}
-                  onValueChange={(value: string) => {
-                    form.setValue('alignment', value as 'left' | 'center' | 'right');
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select alignment" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="left">Left</SelectItem>
-                    <SelectItem value="center">Center</SelectItem>
-                    <SelectItem value="right">Right</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
-        </div>
-      </TabsContent>
-
-      <TabsContent className="mt-4 space-y-6" value="advanced">
-        <div className="space-y-4">
-          <div>
-            <h3 className="mb-4 font-semibold text-sm">Padding</h3>
+            <h3 className="mb-4 font-semibold text-sm">Block Spacing</h3>
+            <p className="mb-4 text-muted-foreground text-xs">
+              Add space above and below this block to create gaps between blocks
+            </p>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="paddingTop">Top (px)</Label>
+                <Label htmlFor="marginTop">Top Margin (px)</Label>
                 <Input
-                  id="paddingTop"
+                  id="marginTop"
                   type="number"
-                  value={watchedValues.padding?.top || 80}
+                  min="0"
+                  value={watchedValues.marginTop || 0}
                   onChange={(e) => {
-                    form.setValue('padding', {
-                      ...watchedValues.padding,
-                      top: Number.parseInt(e.target.value, 10) || 0,
-                    });
+                    form.setValue('marginTop', Number.parseInt(e.target.value, 10) || 0);
                   }}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="paddingBottom">Bottom (px)</Label>
+                <Label htmlFor="marginBottom">Bottom Margin (px)</Label>
                 <Input
-                  id="paddingBottom"
+                  id="marginBottom"
                   type="number"
-                  value={watchedValues.padding?.bottom || 80}
+                  min="0"
+                  value={watchedValues.marginBottom || 0}
                   onChange={(e) => {
-                    form.setValue('padding', {
-                      ...watchedValues.padding,
-                      bottom: Number.parseInt(e.target.value, 10) || 0,
-                    });
-                  }}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="paddingLeft">Left (px)</Label>
-                <Input
-                  id="paddingLeft"
-                  type="number"
-                  value={watchedValues.padding?.left || 20}
-                  onChange={(e) => {
-                    form.setValue('padding', {
-                      ...watchedValues.padding,
-                      left: Number.parseInt(e.target.value, 10) || 0,
-                    });
-                  }}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="paddingRight">Right (px)</Label>
-                <Input
-                  id="paddingRight"
-                  type="number"
-                  value={watchedValues.padding?.right || 20}
-                  onChange={(e) => {
-                    form.setValue('padding', {
-                      ...watchedValues.padding,
-                      right: Number.parseInt(e.target.value, 10) || 0,
-                    });
+                    form.setValue('marginBottom', Number.parseInt(e.target.value, 10) || 0);
                   }}
                 />
               </div>
             </div>
+          </div>
+
+          {/* Padding - optional internal spacing */}
+          <div>
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-sm">Internal Padding</h3>
+                <p className="text-muted-foreground text-xs">
+                  Add padding inside the block (optional)
+                </p>
+              </div>
+              <Switch
+                checked={watchedValues.enablePadding || false}
+                onCheckedChange={(checked) => {
+                  form.setValue('enablePadding', checked);
+                }}
+              />
+            </div>
+            {watchedValues.enablePadding && (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="paddingTop">Top Padding (px)</Label>
+                  <Input
+                    id="paddingTop"
+                    type="number"
+                    min="0"
+                    value={watchedValues.paddingTop || 80}
+                    onChange={(e) => {
+                      form.setValue('paddingTop', Number.parseInt(e.target.value, 10) || 0);
+                    }}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="paddingBottom">Bottom Padding (px)</Label>
+                  <Input
+                    id="paddingBottom"
+                    type="number"
+                    min="0"
+                    value={watchedValues.paddingBottom || 80}
+                    onChange={(e) => {
+                      form.setValue('paddingBottom', Number.parseInt(e.target.value, 10) || 0);
+                    }}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </TabsContent>
