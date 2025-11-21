@@ -55,20 +55,36 @@ export async function getSiteById(siteId: string) {
   return data;
 }
 
-export async function createSite(site: Omit<Tables['sites']['Insert'], 'user_id'>) {
+export async function createSite(
+  site: Omit<Tables['sites']['Insert'], 'user_id'>,
+  userId?: string
+) {
   const supabase = await createServerClient();
-  const userId = await getCurrentUserId();
+  
+  // Get user to ensure session is active
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    throw new Error('User not authenticated');
+  }
+
+  // Use provided userId or fallback to authenticated user
+  const finalUserId = userId || user.id;
 
   const { data, error } = await supabase
     .from('sites')
     .insert({
       ...site,
-      user_id: userId,
+      user_id: finalUserId,
     })
     .select()
     .single();
 
   if (error) {
+    console.error('Supabase error:', error);
     throw new Error(`Failed to create site: ${error.message}`);
   }
 

@@ -29,6 +29,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import { useBlocks, useCreateBlock, useUpdateBlock, useDeleteBlock, useReorderBlocks } from '@/hooks/use-blocks';
 import { getBlock } from '@/blocks/index';
 import type { BlockDefinition } from '@/blocks/types';
@@ -167,8 +168,12 @@ export function BlockEditor({ siteId, pageId }: BlockEditorProps) {
 
       try {
         await reorderBlocks.mutateAsync({ siteId, pageId, blockIds });
+        toast.success('Blocks reordered successfully');
       } catch (error) {
         console.error('Failed to reorder blocks:', error);
+        toast.error(
+          error instanceof Error ? error.message : 'Failed to reorder blocks'
+        );
       }
     }
   };
@@ -203,10 +208,14 @@ export function BlockEditor({ siteId, pageId }: BlockEditorProps) {
         display_order: blocks.length,
       });
       const newBlock = dbBlockToBlock(newDbBlock);
+      toast.success('Block added successfully');
       // Auto-select the new block
       handleBlockClick(newBlock);
     } catch (error) {
       console.error('Failed to create block:', error);
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to add block'
+      );
     }
   };
 
@@ -214,12 +223,16 @@ export function BlockEditor({ siteId, pageId }: BlockEditorProps) {
     if (confirm('Are you sure you want to delete this block?')) {
       try {
         await deleteBlock.mutateAsync({ siteId, pageId, blockId });
+        toast.success('Block deleted successfully');
         if (selectedBlock?.id === blockId) {
           setSelectedBlock(null);
           setBlockDefinition(null);
         }
       } catch (error) {
         console.error('Failed to delete block:', error);
+        toast.error(
+          error instanceof Error ? error.message : 'Failed to delete block'
+        );
       }
     }
   };
@@ -239,8 +252,12 @@ export function BlockEditor({ siteId, pageId }: BlockEditorProps) {
       if (selectedBlock?.id === blockId) {
         setSelectedBlock({ ...selectedBlock, params });
       }
+      // Don't show toast for every update to avoid spam
     } catch (error) {
       console.error('Failed to update block:', error);
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to update block'
+      );
     }
   };
 
@@ -309,7 +326,18 @@ export function BlockEditor({ siteId, pageId }: BlockEditorProps) {
           </div>
         </div>
         <div className="flex-1 overflow-y-auto p-4">
-          {sidebarCollapsed ? (
+          {isLoading ? (
+            <div className="flex h-full items-center justify-center">
+              <p className="text-muted-foreground text-sm">Loading blocks...</p>
+            </div>
+          ) : sortedBlocks.length === 0 ? (
+            <div className="flex h-full items-center justify-center">
+              <div className="text-center">
+                <Layout className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
+                <p className="text-muted-foreground text-sm">No blocks yet</p>
+              </div>
+            </div>
+          ) : sidebarCollapsed ? (
             <div className="space-y-2">
               {sortedBlocks.map((block) => {
                 const isSelected = selectedBlock?.id === block.id;
@@ -383,32 +411,52 @@ export function BlockEditor({ siteId, pageId }: BlockEditorProps) {
           </Button>
         </div>
         <div className="flex-1 overflow-y-auto p-8">
-          <div className="mx-auto max-w-4xl space-y-8">
-            {sortedBlocks.map((block) => {
-              const definition = blockDefinitions.get(block.blockId);
-              if (!definition) {
+          {isLoading ? (
+            <div className="flex h-full items-center justify-center">
+              <p className="text-muted-foreground">Loading blocks...</p>
+            </div>
+          ) : sortedBlocks.length === 0 ? (
+            <div className="flex h-full items-center justify-center">
+              <div className="text-center">
+                <Layout className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+                <h3 className="mb-2 font-semibold text-lg">No blocks yet</h3>
+                <p className="mb-4 text-muted-foreground">
+                  Add your first block to get started
+                </p>
+                <Button onClick={() => setShowBlockPicker(true)}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Block
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="mx-auto max-w-4xl space-y-8">
+              {sortedBlocks.map((block) => {
+                const definition = blockDefinitions.get(block.blockId);
+                if (!definition) {
+                  return (
+                    <div
+                      className="rounded-lg border border-border bg-card p-8"
+                      key={block.id}
+                    >
+                      <p className="text-muted-foreground">
+                        Loading block: {block.blockId}...
+                      </p>
+                    </div>
+                  );
+                }
+                const Preview = definition.Preview;
                 return (
                   <div
-                    className="rounded-lg border border-border bg-card p-8"
+                    className="rounded-lg border border-border bg-card"
                     key={block.id}
                   >
-                    <p className="text-muted-foreground">
-                      Loading block: {block.blockId}...
-                    </p>
+                    <Preview isEditing params={block.params} />
                   </div>
                 );
-              }
-              const Preview = definition.Preview;
-              return (
-                <div
-                  className="rounded-lg border border-border bg-card"
-                  key={block.id}
-                >
-                  <Preview isEditing params={block.params} />
-                </div>
-              );
-            })}
-          </div>
+              })}
+            </div>
+          )}
         </div>
       </div>
 

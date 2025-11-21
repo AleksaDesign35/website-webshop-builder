@@ -28,7 +28,9 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { usePages, useUpdatePage, useDeletePage, useReorderPages } from '@/hooks/use-pages';
+import { toast } from 'sonner';
+import { usePages, useUpdatePage, useDeletePage, useReorderPages, useCreatePage } from '@/hooks/use-pages';
+import { useBlocks, useCreateBlock } from '@/hooks/use-blocks';
 import { Button } from '@/components/ui/button';
 import {
   Table,
@@ -142,10 +144,20 @@ function SortablePageRow({
           className="h-8 w-8"
           onClick={(e) => {
             e.stopPropagation();
-            console.log('Code view:', page.id);
+            // Show page data as JSON in a modal/alert
+            const pageData = {
+              id: page.id,
+              name: page.name,
+              description: page.description,
+              is_active: page.is_active,
+              display_order: page.display_order,
+            };
+            navigator.clipboard.writeText(JSON.stringify(pageData, null, 2));
+            toast.success('Page data copied to clipboard');
           }}
           size="icon"
           variant="ghost"
+          title="Copy page data as JSON"
         >
           <Code className="h-4 w-4" />
         </Button>
@@ -196,6 +208,8 @@ export function PageList({ siteId }: PageListProps) {
   const updatePage = useUpdatePage();
   const deletePage = useDeletePage();
   const reorderPages = useReorderPages();
+  const createPage = useCreatePage();
+  const createBlock = useCreateBlock();
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -216,8 +230,12 @@ export function PageList({ siteId }: PageListProps) {
 
       try {
         await reorderPages.mutateAsync({ siteId, pageIds });
+        toast.success('Pages reordered successfully');
       } catch (error) {
         console.error('Failed to reorder pages:', error);
+        toast.error(
+          error instanceof Error ? error.message : 'Failed to reorder pages'
+        );
       }
     }
   };
@@ -226,8 +244,12 @@ export function PageList({ siteId }: PageListProps) {
     if (confirm('Are you sure you want to delete this page?')) {
       try {
         await deletePage.mutateAsync({ siteId, pageId });
+        toast.success('Page deleted successfully');
       } catch (error) {
         console.error('Failed to delete page:', error);
+        toast.error(
+          error instanceof Error ? error.message : 'Failed to delete page'
+        );
       }
     }
   };
@@ -241,15 +263,62 @@ export function PageList({ siteId }: PageListProps) {
           pageId,
           updates: { is_active: !page.is_active },
         });
+        toast.success(
+          page.is_active ? 'Page unpublished' : 'Page published'
+        );
       } catch (error) {
         console.error('Failed to toggle page active status:', error);
+        toast.error(
+          error instanceof Error ? error.message : 'Failed to update page'
+        );
       }
     }
   };
 
-  const handleCopy = (pageId: string) => {
-    console.log('Copy page:', pageId);
-    // TODO: Implement copy functionality
+  const handleCopy = async (pageId: string) => {
+    const page = pages.find((p) => p.id === pageId);
+    if (!page) return;
+
+    try {
+      // Create a new page with the same data
+      const newPage = await createPage.mutateAsync({
+        siteId,
+        name: `${page.name} (Copy)`,
+        description: page.description,
+        is_active: false,
+        display_order: pages.length,
+      });
+
+      // Fetch blocks from the original page
+      const blocksResponse = await fetch(`/api/blocks?siteId=${siteId}&pageId=${pageId}`, {
+        credentials: 'include',
+      });
+      if (blocksResponse.ok) {
+        const blocks = await blocksResponse.json();
+        const sortedBlocks = [...blocks].sort(
+          (a: { display_order: number }, b: { display_order: number }) =>
+            (a.display_order ?? 0) - (b.display_order ?? 0)
+        );
+
+        // Create blocks for the new page
+        for (const block of sortedBlocks) {
+          await createBlock.mutateAsync({
+            siteId,
+            pageId: newPage.id,
+            block_id: block.block_id,
+            params: block.params,
+            display_order: block.display_order,
+          });
+        }
+      }
+
+      toast.success('Page copied successfully');
+    } catch (error) {
+      console.error('Failed to copy page:', error);
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to copy page'
+      );
+    }
   };
 
   if (isLoading) {

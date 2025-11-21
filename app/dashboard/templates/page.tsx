@@ -1,7 +1,10 @@
 'use client';
 
 import { Layout, Search, Sparkles } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { toast } from 'sonner';
+import { useCreateSite } from '@/hooks/use-sites';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -60,8 +63,11 @@ const templates = [
 ];
 
 export default function TemplatesPage() {
+  const router = useRouter();
+  const createSite = useCreateSite();
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
+  const [isCreating, setIsCreating] = useState<string | null>(null);
 
   const filteredTemplates = templates.filter((template) => {
     const matchesCategory =
@@ -131,7 +137,32 @@ export default function TemplatesPage() {
                 <span className="text-muted-foreground text-sm">
                   {template.pages} pages • {template.category}
                 </span>
-                <Button size="sm">Use Template</Button>
+                <Button
+                  disabled={isCreating === template.name}
+                  onClick={async () => {
+                    setIsCreating(template.name);
+                    try {
+                      const newSite = await createSite.mutateAsync({
+                        name: template.name,
+                        description: template.description,
+                      });
+                      toast.success('Site created from template!');
+                      router.push(`/dashboard/sites/${newSite.id}`);
+                    } catch (error) {
+                      console.error('Failed to create site from template:', error);
+                      toast.error(
+                        error instanceof Error
+                          ? error.message
+                          : 'Failed to create site'
+                      );
+                    } finally {
+                      setIsCreating(null);
+                    }
+                  }}
+                  size="sm"
+                >
+                  {isCreating === template.name ? 'Creating...' : 'Use Template'}
+                </Button>
               </div>
             </CardContent>
           </Card>

@@ -3,6 +3,7 @@
 import { ArrowLeft, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import { useSites } from '@/hooks/use-sites';
 import { useCreatePage } from '@/hooks/use-pages';
 import { NewPageModal } from '@/components/dashboard/new-page-modal';
@@ -35,8 +36,12 @@ export default function SiteDetailPage({ params }: SiteDetailPageProps) {
         is_active: false,
         display_order: 0,
       });
+      toast.success('Page created successfully!');
     } catch (error) {
       console.error('Failed to create page:', error);
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to create page'
+      );
     }
   };
 

@@ -12,7 +12,10 @@ export function useBlocks(siteId: string, pageId: string) {
     queryKey: ['blocks', siteId, pageId],
     queryFn: async () => {
       const response = await fetch(
-        `/api/blocks?siteId=${siteId}&pageId=${pageId}`
+        `/api/blocks?siteId=${siteId}&pageId=${pageId}`,
+        {
+          credentials: 'include',
+        }
       );
       if (!response.ok) {
         throw new Error('Failed to fetch blocks');
@@ -32,6 +35,7 @@ export function useCreateBlock() {
       const response = await fetch('/api/blocks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ siteId, pageId, ...blockData }),
       });
       if (!response.ok) {
@@ -66,6 +70,7 @@ export function useUpdateBlock() {
       const response = await fetch(`/api/blocks/${blockId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ siteId, pageId, ...updates }),
       });
       if (!response.ok) {
@@ -99,6 +104,7 @@ export function useDeleteBlock() {
         `/api/blocks/${blockId}?siteId=${siteId}&pageId=${pageId}`,
         {
           method: 'DELETE',
+          credentials: 'include',
         }
       );
       if (!response.ok) {
@@ -141,6 +147,7 @@ export function useReorderBlocks() {
           fetch(`/api/blocks/${blockId}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
             body: JSON.stringify({ siteId, pageId, ...updateData }),
           })
       );

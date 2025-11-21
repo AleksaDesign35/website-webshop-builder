@@ -4,7 +4,8 @@ import { Eye, FileText, Plus, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { useSites, useCreateSite } from '@/hooks/use-sites';
+import { toast } from 'sonner';
+import { useSites, useCreateSite, useDeleteSite } from '@/hooks/use-sites';
 import { NewSiteModal } from '@/components/dashboard/new-site-modal';
 import { Button } from '@/components/ui/button';
 import {
@@ -21,6 +22,7 @@ export default function SitesPage() {
   const [showNewSiteModal, setShowNewSiteModal] = useState(false);
   const { data: sites, isLoading } = useSites();
   const createSite = useCreateSite();
+  const deleteSite = useDeleteSite();
 
   const handleNewSite = async (data: {
     name: string;
@@ -33,14 +35,33 @@ export default function SitesPage() {
         description: data.description || undefined,
         logo_url: data.logo || undefined,
       });
+      toast.success('Site created successfully!');
       router.push(`/dashboard/sites/${newSite.id}`);
     } catch (error) {
       console.error('Failed to create site:', error);
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to create site'
+      );
     }
   };
 
   const handleSiteClick = (siteId: string) => {
     router.push(`/dashboard/sites/${siteId}`);
+  };
+
+  const handleDeleteSite = async (siteId: string, siteName: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (confirm(`Are you sure you want to delete "${siteName}"? This action cannot be undone.`)) {
+      try {
+        await deleteSite.mutateAsync(siteId);
+        toast.success('Site deleted successfully');
+      } catch (error) {
+        console.error('Failed to delete site:', error);
+        toast.error(
+          error instanceof Error ? error.message : 'Failed to delete site'
+        );
+      }
+    }
   };
 
   return (
@@ -57,7 +78,14 @@ export default function SitesPage() {
             <Plus className="mr-2 h-4 w-4" />
             New Site
           </Button>
-          <Button variant="outline">Import Site</Button>
+          <Button
+            onClick={() => {
+              toast.info('Import functionality coming soon!');
+            }}
+            variant="outline"
+          >
+            Import Site
+          </Button>
         </div>
       </div>
 
@@ -108,6 +136,16 @@ export default function SitesPage() {
                       {site.description}
                     </p>
                   )}
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      className="h-8 w-8 text-destructive hover:text-destructive"
+                      onClick={(e) => handleDeleteSite(site.id, site.name, e)}
+                      size="icon"
+                      variant="ghost"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>

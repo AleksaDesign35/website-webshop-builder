@@ -11,7 +11,9 @@ export function usePages(siteId: string) {
   return useQuery({
     queryKey: ['pages', siteId],
     queryFn: async () => {
-      const response = await fetch(`/api/pages?siteId=${siteId}`);
+      const response = await fetch(`/api/pages?siteId=${siteId}`, {
+        credentials: 'include',
+      });
       if (!response.ok) {
         throw new Error('Failed to fetch pages');
       }
@@ -30,6 +32,7 @@ export function useCreatePage() {
       const response = await fetch('/api/pages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ siteId, ...pageData }),
       });
       if (!response.ok) {
@@ -60,6 +63,7 @@ export function useUpdatePage() {
       const response = await fetch(`/api/pages/${pageId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ siteId, ...updates }),
       });
       if (!response.ok) {
@@ -87,6 +91,7 @@ export function useDeletePage() {
     }) => {
       const response = await fetch(`/api/pages/${pageId}?siteId=${siteId}`, {
         method: 'DELETE',
+        credentials: 'include',
       });
       if (!response.ok) {
         const error = await response.json();
@@ -122,6 +127,7 @@ export function useReorderPages() {
         fetch(`/api/pages/${pageId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ siteId, ...updateData }),
         })
       );
